@@ -339,6 +339,33 @@ export function hasAllPassedMissionParticipants(session: MissionSession | null |
   return Array.from(participantIds).every((userId) => passedUserIds.has(userId));
 }
 
+export function hasResolvedMissionParticipants(session: MissionSession | null | undefined) {
+  if (!session) {
+    return false;
+  }
+
+  const participantMembers = session.members.filter((member) => (
+    member.participationStatus === 'PARTICIPATING'
+    || member.participationStatus === 'COMPLETED'
+    || member.participationStatus === 'TIMED_OUT'
+  ));
+
+  if (participantMembers.length === 0) {
+    return false;
+  }
+
+  return participantMembers.every((member) => {
+    if (member.participationStatus === 'COMPLETED' || member.participationStatus === 'TIMED_OUT') {
+      return true;
+    }
+
+    return session.submissions.some((submission) => (
+      submission.userId === member.userId
+      && ['PASSED', 'REJECTED', 'ERROR'].includes(submission.judgeStatus ?? '')
+    ));
+  });
+}
+
 export function getReviewMissionSubmissions(session: MissionSession | null | undefined) {
   return session?.submissions.filter((submission) => Boolean(submission.imageUrl) && submission.judgeStatus !== 'REJECTED' && submission.judgeStatus !== 'ERROR') ?? [];
 }

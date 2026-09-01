@@ -211,6 +211,20 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
   }, [passedSubmissions, requiredCommentsPerPhoto, transitionSubmissionId]);
   const currentSubmission = passedSubmissions[currentSubmissionIndex] ?? null;
   const shouldSkipVoting = useMemo(() => shouldSkipMissionVote(session, passedSubmissions), [passedSubmissions, session]);
+
+  useEffect(() => {
+    if (!session || isMissionTimeout || passedSubmissions.length > 0 || hasNavigatedForward.current) {
+      return;
+    }
+
+    hasNavigatedForward.current = true;
+    if (scheduleId) {
+      router.replace({ pathname: '/trip/active', params: { scheduleId } });
+    } else {
+      router.back();
+    }
+  }, [isMissionTimeout, passedSubmissions.length, scheduleId, session]);
+
   const commentRemainingMs = getRemainingMs(session?.commentEndsAt, now);
   const isCommentExpired = commentRemainingMs !== null && commentRemainingMs <= 0;
   const hasCommentedCurrentPhoto = Boolean(currentUserId && currentSubmission?.comments.some((comment) => comment.userId === currentUserId));
@@ -305,7 +319,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     router.back();
   };
 
-  const isWaitingForReveal = Boolean(session && !['REVEALED', 'VOTING', 'COMPLETED'].includes(session.status));
+  const isWaitingForReveal = Boolean(session && passedSubmissions.length === 0 && !['REVEALED', 'VOTING', 'COMPLETED'].includes(session.status));
 
   return {
     commentRemainingMs,

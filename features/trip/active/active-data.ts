@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { getAuthItem, setAuthItem } from '@/lib/auth-storage';
 import {
   MissionSessionApiError,
+  getPassedMissionSubmissions,
   type MissionSession,
 } from '@/lib/mission-session-api';
 import type { TripInvite } from '@/lib/trip-invite-api';
@@ -121,6 +122,17 @@ export function getCompletedParticipantIds(session: MissionSession) {
 
 export function isFinishedSession(session: MissionSession | undefined) {
   const soloMember = session?.members.length === 1 ? session.members[0] : undefined;
+  const groupDeadline = session?.photoUploadEndsAt ?? session?.shootingEndsAt;
+  const groupDeadlineTime = groupDeadline ? new Date(groupDeadline).getTime() : NaN;
+  const isGroupTimedOutWithoutSuccess = Boolean(
+    session
+      && session.members.length > 1
+      && session.status !== 'COMPLETED'
+      && session.status !== 'CANCELLED'
+      && getPassedMissionSubmissions(session).length === 0
+      && Number.isFinite(groupDeadlineTime)
+      && groupDeadlineTime <= Date.now(),
+  );
   const isSoloTimedOut = Boolean(
     soloMember?.participationStatus === 'TIMED_OUT'
       || (
@@ -141,7 +153,7 @@ export function isFinishedSession(session: MissionSession | undefined) {
       ),
   );
 
-  return Boolean(session && (session.status === 'COMPLETED' || session.status === 'CANCELLED' || isSoloTimedOut));
+  return Boolean(session && (session.status === 'COMPLETED' || session.status === 'CANCELLED' || isSoloTimedOut || isGroupTimedOutWithoutSuccess));
 }
 
 export function hasAllPassedMemberSubmissions(session: MissionSession, requiredMemberCount: number) {
@@ -170,8 +182,8 @@ export function getFeedSubmissions(session: MissionSession | undefined) {
   );
 }
 
-export function isFeedReadySession(session: MissionSession, requiredMemberCount: number) {
-  return hasAllPassedMemberSubmissions(session, requiredMemberCount);
+export function isFeedReadySession(session: MissionSession, _requiredMemberCount: number) {
+  return ['REVEALED', 'VOTING', 'COMPLETED'].includes(session.status) && getFeedSubmissions(session).length > 0;
 }
 
 export function isStartedMissionSession(session: MissionSession) {

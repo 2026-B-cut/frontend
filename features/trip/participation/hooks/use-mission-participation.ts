@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { chooseMissionParticipation, cancelMissionSession, connectMissionSessionSocket, connectScheduleMissionSessionSocket, getActiveMissionSession, getMissionSession, isMissionSessionNotFoundError, startMissionSession, type MissionSession } from '@/lib/mission-session-api';
+import { chooseMissionParticipation, cancelMissionSession, connectMissionSessionSocket, connectScheduleMissionSessionSocket, getActiveMissionSession, getMissionSession, getPassedMissionSubmissions, isMissionSessionNotFoundError, startMissionSession, type MissionSession } from '@/lib/mission-session-api';
 import { getCurrentParticipationLocation } from '@/lib/mission-location';
 import { getParticipationErrorMessage, hasLeftParticipation, isParticipating } from '../mission-participation-data';
 
@@ -123,7 +123,11 @@ export function useMissionParticipation({
     }
     const nextMember = nextSession.members.find((member) => member.userId === currentUserId);
     if (nextMember?.participationStatus === 'TIMED_OUT') {
-      navigateToReview(nextSession);
+      if (getPassedMissionSubmissions(nextSession).length > 0) {
+        navigateToReview(nextSession);
+      } else {
+        returnToActiveAfterMissingSession();
+      }
       return;
     }
     if (nextSession.status === 'COMPLETED') {

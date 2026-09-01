@@ -72,6 +72,16 @@ export function useMissionVote({ currentUserId, scheduleId, sessionId }: UseMiss
     goWaiting();
   }, [goWaiting, hasVoted, isLoading, sessionId]);
 
+  useEffect(() => {
+    if (!session || isLoading || hasVoted || !currentUserId || submissions.length !== 1) {
+      return;
+    }
+
+    if (submissions[0]?.userId === currentUserId) {
+      goWaiting();
+    }
+  }, [currentUserId, goWaiting, hasVoted, isLoading, session, submissions]);
+
   const handleVote = async () => {
     const selectedSubmission = submissions.find((submission) => submission.id === selectedSubmissionId);
     const isOwnSubmission = Boolean(currentUserId && selectedSubmission?.userId === currentUserId);

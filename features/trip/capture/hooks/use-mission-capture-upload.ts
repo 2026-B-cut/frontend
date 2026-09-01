@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 
 import { getAuthItem } from '@/lib/auth-storage';
-import { completeMissionSession, connectMissionSessionSocket, getMissionSession, hasAllPassedMissionParticipants, revealMissionSession, uploadMissionSessionPhoto, type MissionJudgementStatus, type MissionSession, type MissionSubmission } from '@/lib/mission-session-api';
+import { completeMissionSession, connectMissionSessionSocket, getMissionSession, hasResolvedMissionParticipants, revealMissionSession, uploadMissionSessionPhoto, type MissionJudgementStatus, type MissionSession, type MissionSubmission } from '@/lib/mission-session-api';
 import { getRemainingMs } from '@/features/trip/trip-data';
 import {
   getJudgementFailureMessage,
@@ -156,7 +156,7 @@ export function useMissionCaptureUpload({
         return;
       }
 
-      if (!hasAllPassedMissionParticipants(currentSession) || revealRequestedRef.current || revealRequestInFlightRef.current) {
+      if (!hasResolvedMissionParticipants(currentSession) || revealRequestedRef.current || revealRequestInFlightRef.current) {
         return;
       }
 

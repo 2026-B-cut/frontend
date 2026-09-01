@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 
 import { getAuthItem } from '@/lib/auth-storage';
-import { connectMissionSessionSocket, getLatestMissionSession, getMissionSession, type MissionSession } from '@/lib/mission-session-api';
+import { connectMissionSessionSocket, getLatestMissionSession, getMissionSession, getPassedMissionSubmissions, hasResolvedMissionParticipants, type MissionSession } from '@/lib/mission-session-api';
 import { getTripSchedule, type TripScheduleMission } from '@/lib/trip-schedule-api';
 import { getMissionDeadline } from '../mission-capture-data';
 
@@ -85,6 +85,7 @@ export function useMissionCaptureSession({
       const myMember = nextSession.members.find((member) => member.userId === getAuthItem('user_id'));
       const hasTimedOut = myMember?.participationStatus === 'TIMED_OUT';
       const isCancelled = nextSession.status === 'CANCELLED';
+      const hasPassedSubmission = getPassedMissionSubmissions(nextSession).length > 0;
 
       if (isCancelled) {
         if (hasNavigatedAwayRef.current) {
@@ -99,20 +100,33 @@ export function useMissionCaptureSession({
         return;
       }
 
+      if (hasPassedSubmission && nextSession.status === 'VOTING') {
+        if (hasNavigatedAwayRef.current) {
+          return;
+        }
+
+        hasNavigatedAwayRef.current = true;
+        router.replace({ pathname: '/trip/vote', params: { ...(scheduleId ? { scheduleId } : {}), sessionId: nextSession.id } });
+        return;
+      }
+
+      if (hasPassedSubmission && (hasTimedOut || nextSession.status === 'REVEALED')) {
+        if (hasNavigatedAwayRef.current) {
+          return;
+        }
+
+        hasNavigatedAwayRef.current = true;
+        router.replace({ pathname: '/trip/review', params: { ...(scheduleId ? { scheduleId } : {}), sessionId: nextSession.id } });
+        return;
+      }
+
       if (hasTimedOut) {
         if (hasNavigatedAwayRef.current) {
           return;
         }
 
         hasNavigatedAwayRef.current = true;
-        router.replace({
-          pathname: '/trip/review',
-          params: {
-            ...(scheduleId ? { scheduleId } : {}),
-            sessionId: nextSession.id,
-            ...(nextSession.members.length === 1 ? { mode: 'mission-timeout' } : {}),
-          },
-        });
+        router.replace({ pathname: '/trip/active', ...(scheduleId ? { params: { scheduleId } } : {}) });
       }
     };
 
@@ -162,7 +176,10 @@ export function useMissionCaptureSession({
       const myMember = nextSession.members.find((member) => member.userId === currentUserId);
       const isNonParticipant = !myMember || myMember.participationStatus === 'SKIPPED' || myMember.participationStatus === 'LOCKED_OUT';
 
-      if ((nextSession.status === 'CANCELLED' || isNonParticipant) && !hasNavigatedAwayRef.current) {
+      const hasPassedSubmission = getPassedMissionSubmissions(nextSession).length > 0;
+      const hasResolvedParticipants = hasResolvedMissionParticipants(nextSession);
+
+      if ((nextSession.status === 'CANCELLED' || isNonParticipant || (!hasPassedSubmission && hasResolvedParticipants)) && !hasNavigatedAwayRef.current) {
         hasNavigatedAwayRef.current = true;
         router.replace({
           pathname: '/trip/active',
@@ -178,7 +195,6 @@ export function useMissionCaptureSession({
           params: {
             ...(scheduleId ? { scheduleId } : {}),
             sessionId: nextSession.id,
-            ...(nextSession.members.length === 1 ? { mode: 'mission-timeout' } : {}),
           },
         });
       }
