@@ -115,7 +115,7 @@ export default function TermsAgreementScreen() {
             accessibilityRole="button"
             disabled={!allSelected || isCompleting}
             onPress={completeAgreement}
-            style={[styles.completeButton, !allSelected && styles.completeButtonDisabled]}>
+            style={[styles.completeButton, allSelected && styles.completeButtonSelected]}>
             {!isCompleting ? (
               <TextBlock style={[styles.completeButtonTextOverlay, allSelected && styles.completeButtonTextSelected]}>{'\uC644\uB8CC'}</TextBlock>
             ) : null}
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
     marginTop: 24,
     minHeight: 63,
   },
-  completeButtonDisabled: {
-    opacity: 0.82,
+  completeButtonSelected: {
+    backgroundColor: '#63B5CD',
   },
   completeButtonText: {
     color: 'transparent',
