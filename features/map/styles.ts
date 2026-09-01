@@ -39,12 +39,17 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 38,
     transform: [{ translateY: -8 }],
+    width: '100%',
+  },
+  categoryItem: {
+    flex: 1,
   },
   categoryButton: {
     alignItems: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 999,
     flexDirection: 'row',
+    flex: 1,
     gap: 10,
     justifyContent: 'center',
     minHeight: 38,

@@ -19,8 +19,7 @@ export function MapCategorySelector({ onSelectCategory, selectedCategory }: MapC
   const mountainTarget = useTutorialTarget('map-mountain', { offsetY: 27, onPress: () => onSelectCategory('MOUNTAIN') });
   const seaTarget = useTutorialTarget('map-sea', { offsetY: 27, onPress: () => onSelectCategory('SEA') });
   const cityTarget = useTutorialTarget('map-city', { offsetY: 27, onPress: () => onSelectCategory('CITY') });
-  const demoTarget = useTutorialTarget('map-demo', { offsetY: 27, onPress: () => onSelectCategory('DEMO') });
-  const tutorialTargets = [mountainTarget, seaTarget, cityTarget, demoTarget];
+  const tutorialTargets = [mountainTarget, seaTarget, cityTarget];
 
   return (
     <View style={styles.categoryRow}>
@@ -29,7 +28,7 @@ export function MapCategorySelector({ onSelectCategory, selectedCategory }: MapC
         const tutorialTarget = tutorialTargets[index];
 
         return (
-          <View key={item.label} onLayout={tutorialTarget.onLayout} ref={tutorialTarget.ref}>
+          <View key={item.label} onLayout={tutorialTarget.onLayout} ref={tutorialTarget.ref} style={styles.categoryItem}>
             <ScalePressable
               accessibilityLabel={`${item.label} 미션 보기`}
               accessibilityRole="button"

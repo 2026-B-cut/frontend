@@ -22,6 +22,14 @@ export type MissionItem = {
   type: string | null;
 };
 
+function normalizeValue(value: string | null | undefined) {
+  return value?.trim().toUpperCase() ?? '';
+}
+
+function isDemoMission(mission: MissionItem) {
+  return normalizeValue(mission.theme) === 'DEMO';
+}
+
 function getString(item: MissionApiItem, keys: string[]) {
   for (const key of keys) {
     const value = item[key];
@@ -146,17 +154,22 @@ export function getCachedMissions() {
 
   try {
     const parsed = JSON.parse(raw) as MissionItem[];
-    return Array.isArray(parsed) ? parsed.filter((mission) => mission.id && mission.title) : [];
+    return Array.isArray(parsed) ? parsed.filter((mission) => mission.id && mission.title && !isDemoMission(mission)) : [];
   } catch {
     return [];
   }
 }
 
 function saveMissionCache(missions: MissionItem[]) {
-  setAuthItem(MISSION_CACHE_KEY, JSON.stringify(missions));
+  setAuthItem(MISSION_CACHE_KEY, JSON.stringify(missions.filter((mission) => !isDemoMission(mission))));
 }
 
 export async function fetchMissions(params: { districtCode?: string; theme?: string }) {
+  // Demo missions are intentionally not part of the user-facing mission catalog.
+  if (normalizeValue(params.theme) === 'DEMO') {
+    return [];
+  }
+
   const query = new URLSearchParams();
 
   if (params.districtCode) {
@@ -172,5 +185,5 @@ export async function fetchMissions(params: { districtCode?: string; theme?: str
     headers: getLanguageHeaders(),
   }));
 
-  return getListPayload(data).map(toMissionItem);
+  return getListPayload(data).map(toMissionItem).filter((mission) => !isDemoMission(mission));
 }

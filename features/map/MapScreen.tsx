@@ -57,7 +57,7 @@ export default function MapScreen() {
   const frameHeight = frameWidth / MISSION_FRAME_ASPECT_RATIO;
   const map = useMapScreen({
     frameWidth,
-    initialCategory: tutorialMissionCode || tutorialRestoreDeck === 'true' ? 'DEMO' : undefined,
+    initialCategory: tutorialMissionCode || tutorialRestoreDeck === 'true' ? 'MOUNTAIN' : undefined,
     language,
     tutorialMissionCode,
   });

@@ -7,7 +7,6 @@ export const themeMapByCategory: Record<MissionTheme, number> = {
   MOUNTAIN: require('@/assets/svg/map/mountain_map.svg'),
   SEA: require('@/assets/svg/map/sea_map.svg'),
   CITY: require('@/assets/svg/map/city_map.svg'),
-  DEMO: dividedMap,
 };
 
 export const categoryItems: CategoryItem[] = [
@@ -28,12 +27,6 @@ export const categoryItems: CategoryItem[] = [
     selectedIcon: require('@/assets/svg/theme_icon/city_filled.svg'),
     label: '도시',
     value: 'CITY',
-  },
-  {
-    icon: require('@/assets/svg/theme_icon/flag.svg'),
-    selectedIcon: require('@/assets/svg/theme_icon/flag_filled.svg'),
-    label: '데모',
-    value: 'DEMO',
   },
 ];
 
@@ -79,7 +72,6 @@ export const DEFAULT_THEME_DISTRICTS: Record<MissionTheme, string[]> = {
   MOUNTAIN: [],
   SEA: [],
   CITY: [],
-  DEMO: [],
 };
 
 export const MAP_ASPECT_RATIO = 1;

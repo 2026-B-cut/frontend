@@ -9,7 +9,6 @@ export const themeItems: MissionThemeItem[] = [
   { icon: require('@/assets/svg/mission_theme/mountain.svg'), label: '산', value: 'MOUNTAIN' },
   { icon: require('@/assets/svg/mission_theme/sea.svg'), label: '바다', value: 'SEA' },
   { icon: require('@/assets/svg/mission_theme/city.svg'), label: '도시', value: 'CITY' },
-  { icon: require('@/assets/svg/theme_icon/flag.svg'), label: '데모', value: 'DEMO' },
 ];
 
 const districtCodeByLabel: Record<string, string> = {
@@ -46,7 +45,7 @@ export function normalizeValue(value: string | null | undefined) {
 export function getValidTheme(value: string | string[] | undefined): MissionTheme {
   const theme = normalizeValue(getParamValue(value));
 
-  return theme === 'SEA' || theme === 'CITY' || theme === 'DEMO' ? theme : 'MOUNTAIN';
+  return theme === 'SEA' || theme === 'CITY' ? theme : 'MOUNTAIN';
 }
 
 export function getSortedMissions(

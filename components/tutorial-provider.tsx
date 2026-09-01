@@ -16,7 +16,6 @@ export type TutorialTargetId =
   | 'map-mountain'
   | 'map-sea'
   | 'map-city'
-  | 'map-demo'
   | 'map-dongnae'
   | 'mission-card'
   | 'mission-detail'
@@ -275,7 +274,6 @@ export function TutorialProvider({ children }: PropsWithChildren) {
       } else if (currentTargetId === 'map-sea') {
         targets['map-city']?.onPress?.();
       } else if (currentTargetId === 'map-city') {
-        targets['map-demo']?.onPress?.();
         setStepIndex(stepIndex + 1);
         return;
       }
