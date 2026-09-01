@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { useTutorialTarget, type TutorialTargetId } from '@/components/tutorial-provider';
 
-const hiddenPathnames = ['/', '/login', '/terms', '/terms-detail', '/welcome', '/onboarding/step1', '/auth/callback', '/main/waiting', '/search', '/trip/participation', '/trip/capture', '/trip/review', '/trip/vote', '/trip/vote-waiting', '/trip/result', '/trip/edit'];
+const hiddenPathnames = ['/', '/login', '/terms', '/terms-detail', '/welcome', '/onboarding/step1', '/auth/callback', '/main/waiting', '/trip/participation', '/trip/capture', '/trip/review', '/trip/vote', '/trip/vote-waiting', '/trip/result', '/trip/edit'];
 
 type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
 
