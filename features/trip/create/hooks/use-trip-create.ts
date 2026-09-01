@@ -210,7 +210,7 @@ export function useTripCreate({ pendingMissionId, onBack, onCreated }: UseTripCr
       setMessage('');
       await shareKakaoInvite(templateArgs);
       setInviteSheetVisible(false);
-      setMessage('카카오톡 초대장을 열었어요.');
+      setMessage('');
     } catch (error) {
       setMessage(`카카오 초대 실패: ${getErrorMessage(error)}`);
     } finally {

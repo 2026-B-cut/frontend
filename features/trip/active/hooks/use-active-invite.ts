@@ -67,7 +67,7 @@ export function useActiveInvite({ hasStartedMissionSession, schedule }: UseActiv
       setInviteMessage('');
       await shareKakaoInvite(createKakaoInviteTemplateArgs({ ...inviteData, inviteUrl }));
       setInviteSheetVisible(false);
-      setInviteMessage('카카오톡 초대장을 열었어요.');
+      setInviteMessage('');
     } catch (error) {
       setInviteMessage(error instanceof Error ? error.message : '카카오 초대에 실패했어요.');
     } finally {

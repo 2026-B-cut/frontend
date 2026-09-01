@@ -245,7 +245,7 @@ export function useMissionDetail({
       setSelectedMission(null);
       setSelectedScheduleForDate(null);
       setSelectedPlannedDate(null);
-      setActionMessage(`${schedule.roomName} ${plannedDate}에 미션을 담았어요.`);
+      setActionMessage('');
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : '미션을 일정에 담지 못했어요.');
     } finally {
