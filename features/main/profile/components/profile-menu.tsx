@@ -18,6 +18,7 @@ type ProfileMenuProps = {
   isAccountActionInProgress: boolean;
   onDeleteAccount: () => void;
   onLogout: () => void;
+  onOpenNotifications: () => void;
   onPasswordReset: () => void;
 };
 
@@ -33,13 +34,14 @@ export function ProfileMenu({
   isAccountActionInProgress,
   onDeleteAccount,
   onLogout,
+  onOpenNotifications,
   onPasswordReset,
 }: ProfileMenuProps) {
   return (
     <View style={[styles.menuSection, { paddingBottom: 30, paddingHorizontal: horizontalPadding }]}>
       <View style={[styles.menuCard, { maxWidth: contentMaxWidth }]}>
         {menuItems.map((item) => (
-          <ScalePressable accessibilityRole="button" disabled={isAccountActionInProgress} key={item.label} onPress={() => {}} pressedScale={0.98} style={styles.menuRow}>
+          <ScalePressable accessibilityRole="button" disabled={isAccountActionInProgress} key={item.label} onPress={item.label === '알림' ? onOpenNotifications : () => {}} pressedScale={0.98} style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <MaterialCommunityIcons color="#10161F" name={item.icon} size={25} />
               <Text style={styles.menuText}>{item.label}</Text>
