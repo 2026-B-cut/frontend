@@ -19,7 +19,7 @@ type ProfileMenuProps = {
   onDeleteAccount: () => void;
   onLogout: () => void;
   onOpenNotifications: () => void;
-  onOpenTerms: () => void;
+  onOpenPrivacySecurity: () => void;
   onPasswordReset: () => void;
 };
 
@@ -27,7 +27,6 @@ const menuItems: MenuItem[] = [
   { icon: 'account-circle-outline', label: '카카오 계정' },
   { icon: 'lock-outline', label: '개인정보 / 보안' },
   { icon: 'bell-outline', label: '알림' },
-  { icon: 'help-circle-outline', label: '이용 약관' },
 ];
 
 export function ProfileMenu({
@@ -37,7 +36,7 @@ export function ProfileMenu({
   onDeleteAccount,
   onLogout,
   onOpenNotifications,
-  onOpenTerms,
+  onOpenPrivacySecurity,
   onPasswordReset,
 }: ProfileMenuProps) {
   return (
@@ -51,8 +50,8 @@ export function ProfileMenu({
             onPress={
               item.label === '알림'
                 ? onOpenNotifications
-                : item.label === '이용 약관'
-                  ? onOpenTerms
+                : item.label === '개인정보 / 보안'
+                  ? onOpenPrivacySecurity
                   : () => {}
             }
             pressedScale={0.98}
