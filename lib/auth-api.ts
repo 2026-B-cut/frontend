@@ -6,8 +6,7 @@
  */
 export { API_BASE_URL } from '@/lib/api-config';
 
-export { fetchWithAuth } from './auth/auth-client';
-export { AuthApiError } from './auth/auth-client';
+export { AuthApiError, fetchWithAuth, isAuthSessionInvalidError } from './auth/auth-client';
 export {
   completeOnboarding,
   fetchAuthBootstrap,

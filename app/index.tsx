@@ -1,11 +1,18 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { refreshAuthToken, resolveAuthenticatedRoute, saveAuthTokens, saveWebKakaoAuthToken } from '@/lib/auth-api';
-import { deletePersistentAuthItem, getPersistentAuthItem } from '@/lib/auth-storage';
+import {
+  clearAuthSession,
+  isAuthSessionInvalidError,
+  refreshAuthToken,
+  resolveAuthenticatedRoute,
+  saveAuthTokens,
+  saveWebKakaoAuthToken,
+} from '@/lib/auth-api';
+import { getPersistentAuthItem } from '@/lib/auth-storage';
 
 const splashText = require('@/assets/svg/logo_text.svg');
 const splashMap = require('@/assets/svg/splash_map.svg');
@@ -54,10 +61,13 @@ function clearWebKakaoCallbackUrl() {
 
 export default function SplashScreen() {
   const { bottomSafeInset } = useResponsiveLayout();
+  const [restoreError, setRestoreError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let isActive = true;
     const startedAt = Date.now();
+    setRestoreError('');
 
     const routeAfterSplash = async (path: '/login' | '/main' | '/welcome' | '/terms') => {
       await waitForMinimumSplash(startedAt);
@@ -93,14 +103,16 @@ export default function SplashScreen() {
         const tokens = await refreshAuthToken(refreshToken);
         await saveAuthTokens(tokens, true);
         await routeAfterAuthentication();
-      } catch {
-        await Promise.all([
-          deletePersistentAuthItem('access_token'),
-          deletePersistentAuthItem('refresh_token'),
-          deletePersistentAuthItem('auto_login'),
-          deletePersistentAuthItem('user_id'),
-        ]);
-        await routeAfterSplash('/login');
+      } catch (error) {
+        if (isAuthSessionInvalidError(error)) {
+          await clearAuthSession();
+          await routeAfterSplash('/login');
+          return;
+        }
+
+        if (isActive) {
+          setRestoreError('네트워크 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.');
+        }
       }
     };
 
@@ -109,7 +121,24 @@ export default function SplashScreen() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [retryCount]);
+
+  if (restoreError) {
+    return (
+      <View style={[styles.container, { paddingBottom: bottomSafeInset }]}>
+        <View style={styles.brandGroup}>
+          <Image source={splashText} style={styles.logoText} contentFit="contain" />
+          <Image source={splashMap} style={styles.logoMap} contentFit="contain" />
+        </View>
+        <View style={styles.retryGroup}>
+          <Text style={styles.retryMessage}>{restoreError}</Text>
+          <Pressable onPress={() => setRetryCount((count) => count + 1)} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>다시 시도</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingBottom: bottomSafeInset }]}>
@@ -132,6 +161,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 28,
     transform: [{ translateY: -36 }],
+  },
+  retryGroup: {
+    alignItems: 'center',
+    marginTop: 36,
+    paddingHorizontal: 28,
+  },
+  retryMessage: {
+    color: '#8A9194',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  retryButton: {
+    alignItems: 'center',
+    backgroundColor: '#63B5CD',
+    borderRadius: 999,
+    marginTop: 18,
+    minWidth: 132,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   logoText: {
     height: 42,

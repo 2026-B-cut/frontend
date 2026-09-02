@@ -27,6 +27,10 @@ export class AuthApiError extends Error {
   }
 }
 
+export function isAuthSessionInvalidError(error: unknown) {
+  return error instanceof AuthApiError && [400, 401, 403, 422].includes(error.status);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -178,8 +182,11 @@ export async function fetchWithAuth(input: RequestInfo | URL, init: RequestInit 
 
   try {
     await refreshCurrentSession();
-  } catch {
-    await clearAuthSession();
+  } catch (error) {
+    if (isAuthSessionInvalidError(error)) {
+      await clearAuthSession();
+    }
+
     return response;
   }
 
