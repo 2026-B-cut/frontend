@@ -7,12 +7,14 @@ import { MISSION_CARD_COLLAPSED_VISIBLE_HEIGHT, MISSION_CARD_HEIGHT } from '@/fe
 type UseMissionCaptureCameraOptions = {
   bottomSafeInset: number;
   height: number;
+  isLocationChecking: boolean;
+  isLocationVerified: boolean;
   isShootingExpired: boolean;
-  onPhotoCaptured: (uri: string) => void;
+  onPhotoCaptured: (uri: string) => void | Promise<void>;
 };
 
 // 카메라 권한·촬영 설정·사진 촬영과 미션 카드 드래그 상태를 담당합니다.
-export function useMissionCaptureCamera({ bottomSafeInset, height, isShootingExpired, onPhotoCaptured }: UseMissionCaptureCameraOptions) {
+export function useMissionCaptureCamera({ bottomSafeInset, height, isLocationChecking, isLocationVerified, isShootingExpired, onPhotoCaptured }: UseMissionCaptureCameraOptions) {
   const cameraRef = useRef<CameraView | null>(null);
   const missionCardTranslateY = useRef(new Animated.Value(0)).current;
   const missionCardOffsetY = useRef(0);
@@ -72,7 +74,7 @@ export function useMissionCaptureCamera({ bottomSafeInset, height, isShootingExp
   };
 
   const handleCapture = async () => {
-    if (!cameraRef.current || isCapturing || isShootingExpired) {
+    if (!cameraRef.current || isCapturing || isShootingExpired || isLocationChecking || !isLocationVerified) {
       return;
     }
 
@@ -80,7 +82,7 @@ export function useMissionCaptureCamera({ bottomSafeInset, height, isShootingExp
       setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
       if (photo?.uri) {
-        onPhotoCaptured(photo.uri);
+        await onPhotoCaptured(photo.uri);
       }
     } finally {
       setIsCapturing(false);

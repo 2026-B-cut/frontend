@@ -6,13 +6,10 @@ import {
   getMissionStartErrorMessage,
   isFeedReadySession,
 } from '@/features/trip/active/active-data';
-import { getCurrentParticipationLocation } from '@/lib/mission-location';
 import {
   cancelMissionSession,
-  chooseMissionParticipation,
   createMissionSession,
   type MissionSession,
-  type MissionParticipationLocation,
 } from '@/lib/mission-session-api';
 import { removeMissionFromSchedule, updateScheduleMissionDate, type TripSchedule, type TripScheduleMission } from '@/lib/trip-schedule-api';
 
@@ -38,7 +35,6 @@ type UseActiveMissionActionsOptions = {
 export function useActiveMissionActions({
   activeBlockingSession,
   clearMissionState,
-  isScheduleCreator,
   isMissionLockedForEdit,
   isTemporaryMission,
   leaderStartingMissionRef,
@@ -58,49 +54,9 @@ export function useActiveMissionActions({
   const [dateEditorMissionId, setDateEditorMissionId] = useState<string | null>(null);
   const [busyScheduleMissionId, setBusyScheduleMissionId] = useState<string | null>(null);
   const [missionListMessage, setMissionListMessage] = useState('');
-  const pendingMissionLocationRef = useRef<MissionParticipationLocation | null>(null);
-  const pendingMissionLocationPromiseRef = useRef<Promise<MissionParticipationLocation> | null>(null);
-  const pendingMissionLocationRequestIdRef = useRef(0);
-
   const isMissionBlockedForPlay = useCallback((mission: TripScheduleMission) => {
     return Boolean(activeBlockingSession?.scheduleMissionId && activeBlockingSession.scheduleMissionId !== mission.scheduleMissionId);
   }, [activeBlockingSession]);
-
-  const preparePendingMissionLocation = useCallback((mission: TripScheduleMission) => {
-    const requiresGps = isScheduleCreator && mission.verificationType?.toUpperCase() === 'GPS_PHOTO';
-    pendingMissionLocationRef.current = null;
-    pendingMissionLocationPromiseRef.current = null;
-    const requestId = ++pendingMissionLocationRequestIdRef.current;
-
-    if (!requiresGps) {
-      return;
-    }
-
-    const locationPromise = getCurrentParticipationLocation();
-    pendingMissionLocationPromiseRef.current = locationPromise;
-    void locationPromise
-      .then((location) => {
-        if (pendingMissionLocationRequestIdRef.current === requestId) {
-          pendingMissionLocationRef.current = location;
-        }
-      })
-      .catch((error) => {
-        if (pendingMissionLocationRequestIdRef.current === requestId) {
-          onMessage(getMissionStartErrorMessage(error));
-        }
-      })
-      .finally(() => {
-        if (pendingMissionLocationRequestIdRef.current === requestId) {
-          pendingMissionLocationPromiseRef.current = null;
-        }
-      });
-  }, [isScheduleCreator, onMessage]);
-
-  useEffect(() => {
-    if (pendingMission) {
-      preparePendingMissionLocation(pendingMission);
-    }
-  }, [pendingMission, preparePendingMissionLocation]);
 
   const handleChangeMissionDate = async (mission: TripScheduleMission, plannedDate: string) => {
     if (!schedule?.scheduleId || busyScheduleMissionId || plannedDate === mission.plannedDate) {
@@ -215,43 +171,17 @@ export function useActiveMissionActions({
     }
 
     const mission = pendingMission;
-    const requiresGps = isScheduleCreator && mission.verificationType?.toUpperCase() === 'GPS_PHOTO';
     let createdSessionId: string | null = null;
 
     try {
       setIsSessionBusy(true);
       onMessage('');
-      const location = requiresGps
-        ? pendingMissionLocationRef.current
-          ?? await (pendingMissionLocationPromiseRef.current ?? getCurrentParticipationLocation())
-        : undefined;
       leaderStartingMissionRef.current = true;
       const createdSession = await createMissionSession(schedule.scheduleId, mission.scheduleMissionId);
       createdSessionId = createdSession.id;
       let nextSession = createdSession;
 
-      if (requiresGps) {
-        try {
-          nextSession = await chooseMissionParticipation(
-            createdSession.id,
-            'PARTICIPATE',
-            location,
-          );
-        } catch (error) {
-          // 세션 생성 후 위치 검증이 실패하면 서버에 WAITING 세션이 남지 않도록 정리합니다.
-          try {
-            await cancelMissionSession(createdSession.id);
-          } catch {
-            // 원래 위치 검증 오류를 사용자에게 보여주고, 서버 정리는 백엔드 만료 처리에 맡깁니다.
-          }
-
-          clearMissionState(mission.scheduleMissionId);
-          throw error;
-        }
-      }
-
       rememberFeedSession(nextSession, mission.scheduleMissionId);
-      pendingMissionLocationRef.current = null;
       setPendingMission(null);
       router.push({
         pathname: '/trip/participation',
@@ -268,7 +198,6 @@ export function useActiveMissionActions({
       if (createdSessionId) {
         suppressedLeaderSessionIdsRef.current.add(createdSessionId);
       }
-      pendingMissionLocationRef.current = null;
       setPendingMission(null);
       onMessage(getMissionStartErrorMessage(error));
     } finally {
@@ -307,9 +236,6 @@ export function useActiveMissionActions({
     missionListMessage,
     missionListVisible,
     onClosePendingMission: () => {
-      pendingMissionLocationRequestIdRef.current += 1;
-      pendingMissionLocationPromiseRef.current = null;
-      pendingMissionLocationRef.current = null;
       setPendingMission(null);
     },
     openFeedSession,

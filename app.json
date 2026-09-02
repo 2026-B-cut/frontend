@@ -45,7 +45,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "B-Cut에서 미션 참여 위치를 확인하기 위해 현재 위치 접근 권한이 필요합니다."
+          "locationWhenInUsePermission": "B-Cut에서 미션 장소와의 거리를 단말기 안에서 확인하기 위해 현재 위치 접근 권한이 필요합니다."
         }
       ],
       [

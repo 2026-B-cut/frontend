@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { chooseMissionParticipation, cancelMissionSession, connectMissionSessionSocket, connectScheduleMissionSessionSocket, getActiveMissionSession, getMissionSession, getPassedMissionSubmissions, isMissionSessionNotFoundError, startMissionSession, type MissionSession } from '@/lib/mission-session-api';
-import { getCurrentParticipationLocation } from '@/lib/mission-location';
 import { getParticipationErrorMessage, hasLeftParticipation, isParticipating } from '../mission-participation-data';
 
 type UseMissionParticipationOptions = {
@@ -17,7 +16,6 @@ type UseMissionParticipationOptions = {
 export function useMissionParticipation({
   currentUserId,
   isFocused,
-  routeVerificationType,
   scheduleId,
   sessionId,
 }: UseMissionParticipationOptions) {
@@ -41,7 +39,6 @@ export function useMissionParticipation({
   )).length ?? 0;
   const isMyParticipationActive = isParticipating(myMember?.participationStatus);
   const canChangeParticipation = Boolean(!isMissionLeader && session && ['WAITING', 'READY'].includes(session.status) && myMember && myMember.participationStatus !== 'LOCKED_OUT');
-  const requiresGps = (session?.verificationType ?? routeVerificationType)?.toUpperCase() === 'GPS_PHOTO';
 
   const goBack = useCallback((suppressParticipationSession = true, isCancellation = false, refreshSessionId?: string) => {
     if (scheduleId) {
@@ -174,8 +171,7 @@ export function useMissionParticipation({
           let nextSession = session;
 
           if (!isParticipating(myMember.participationStatus)) {
-            const location = requiresGps ? await getCurrentParticipationLocation() : undefined;
-            nextSession = await chooseMissionParticipation(sessionId, 'PARTICIPATE', location);
+            nextSession = await chooseMissionParticipation(sessionId, 'PARTICIPATE');
             applySession(nextSession);
           }
 
@@ -209,8 +205,7 @@ export function useMissionParticipation({
     setMessage('');
 
     void (async () => {
-      const location = requiresGps ? await getCurrentParticipationLocation() : undefined;
-      return chooseMissionParticipation(sessionId, 'PARTICIPATE', location);
+      return chooseMissionParticipation(sessionId, 'PARTICIPATE');
     })()
       .then((nextSession) => {
         applySession(nextSession);
@@ -226,7 +221,7 @@ export function useMissionParticipation({
       .finally(() => {
         setIsSubmitting(false);
       });
-  }, [applySession, isMissionLeader, myMember, navigateToCapture, requiresGps, returnToActiveAfterMissingSession, session, sessionId]);
+  }, [applySession, isMissionLeader, myMember, navigateToCapture, returnToActiveAfterMissingSession, session, sessionId]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -347,10 +342,7 @@ export function useMissionParticipation({
     try {
       setIsSubmitting(true);
       setMessage('');
-      const location = decision === 'PARTICIPATE' && requiresGps
-        ? await getCurrentParticipationLocation()
-        : undefined;
-      const nextSession = await chooseMissionParticipation(sessionId, decision, location);
+      const nextSession = await chooseMissionParticipation(sessionId, decision);
       applySession(nextSession);
     } catch (error) {
       if (isMissionSessionNotFoundError(error)) {

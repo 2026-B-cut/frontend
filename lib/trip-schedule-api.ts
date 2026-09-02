@@ -1,6 +1,7 @@
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
 import { getAuthItem, setAuthItem } from '@/lib/auth-storage';
 import { getCurrentLanguage, getLanguageHeaders } from '@/lib/language';
+import type { MissionLocationTarget } from '@/lib/mission-location';
 
 type ScheduleInput = {
   endDate: string;
@@ -17,7 +18,19 @@ type UpdateScheduleInput = ScheduleInput & {
 
 type JsonBodyValue = JsonBodyValue[] | number | string | null;
 
-type ApiMission = {
+type ApiMissionLocation = {
+  allowedRadius?: number | string | null;
+  allowed_radius?: number | string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  radius?: number | string | null;
+  targetLatitude?: number | string | null;
+  targetLongitude?: number | string | null;
+  target_latitude?: number | string | null;
+  target_longitude?: number | string | null;
+};
+
+type ApiMission = ApiMissionLocation & {
   code?: string;
   description?: string;
   district_code?: string;
@@ -34,7 +47,7 @@ type ApiMission = {
   verification_type?: string | null;
 };
 
-type ApiScheduleMission = {
+type ApiScheduleMission = ApiMissionLocation & {
   created_at?: string;
   id?: string | number;
   mission?: ApiMission;
@@ -139,6 +152,7 @@ export type TripScheduleMission = {
   emojiUrl?: string | null;
   missionCode?: string | null;
   missionId: string;
+  locationTarget?: MissionLocationTarget | null;
   photoUrl?: string | null;
   placeLabel?: string | null;
   plannedDate?: string | null;
@@ -289,6 +303,36 @@ function normalizePhotoUrl(photoUrl: string | null | undefined) {
   return photoUrl.startsWith('http') ? photoUrl : `${API_BASE_URL}${photoUrl}`;
 }
 
+function normalizeFiniteNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeMissionLocationTarget(mission: ApiMission | undefined): MissionLocationTarget | null {
+  const targetLatitude = normalizeFiniteNumber(mission?.target_latitude ?? mission?.targetLatitude ?? mission?.latitude);
+  const targetLongitude = normalizeFiniteNumber(mission?.target_longitude ?? mission?.targetLongitude ?? mission?.longitude);
+  const allowedRadius = normalizeFiniteNumber(mission?.allowed_radius ?? mission?.allowedRadius ?? mission?.radius);
+
+  if (
+    targetLatitude === null
+    || targetLongitude === null
+    || allowedRadius === null
+    || targetLatitude < -90
+    || targetLatitude > 90
+    || targetLongitude < -180
+    || targetLongitude > 180
+    || allowedRadius < 0
+  ) {
+    return null;
+  }
+
+  return { allowedRadius, targetLatitude, targetLongitude };
+}
+
 function normalizeScheduleMission(data: ApiScheduleMission): TripScheduleMission {
   const scheduleMissionId = data.id;
   const missionId = data.mission_id ?? data.mission?.id;
@@ -307,6 +351,7 @@ function normalizeScheduleMission(data: ApiScheduleMission): TripScheduleMission
     emojiUrl: normalizePhotoUrl(data.mission?.emoji_url ?? data.mission?.mission_emoji_url),
     missionCode: data.mission?.code ?? null,
     missionId: String(missionId),
+    locationTarget: normalizeMissionLocationTarget(data.mission ?? data),
     photoUrl: normalizePhotoUrl(data.mission?.target_photo_url),
     placeLabel: data.mission?.place_label,
     plannedDate: data.planned_date ?? null,

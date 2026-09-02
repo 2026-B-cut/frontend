@@ -24,6 +24,8 @@ type MissionCaptureCameraViewProps = {
   facing: CameraType;
   flash: FlashMode;
   handleCapture: () => Promise<void>;
+  isLocationChecking: boolean;
+  isLocationVerified: boolean;
   isCapturing: boolean;
   isShootingExpired: boolean;
   mission: TripScheduleMission | null;
@@ -48,6 +50,8 @@ export function MissionCaptureCameraView({
   facing,
   flash,
   handleCapture,
+  isLocationChecking,
+  isLocationVerified,
   isCapturing,
   isMissionLoading,
   isShootingExpired,
@@ -118,7 +122,7 @@ export function MissionCaptureCameraView({
         </Animated.View>
 
         <View pointerEvents="box-none" style={[styles.captureControls, { bottom: bottomSafeInset + 52 }]}>
-          <ScalePressable accessibilityLabel="사진 촬영" disabled={isCapturing || isShootingExpired} onPress={handleCapture} pressedScale={0.92} style={[styles.shutterOuter, (isCapturing || isShootingExpired) && styles.disabledControl]}>
+          <ScalePressable accessibilityLabel="사진 촬영" disabled={isCapturing || isShootingExpired || isLocationChecking || !isLocationVerified} onPress={handleCapture} pressedScale={0.92} style={[styles.shutterOuter, (isCapturing || isShootingExpired || isLocationChecking || !isLocationVerified) && styles.disabledControl]}>
             <View style={styles.shutterInner} />
           </ScalePressable>
 

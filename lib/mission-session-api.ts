@@ -3,8 +3,21 @@ import { Platform } from 'react-native';
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
 import { getAuthItem } from '@/lib/auth-storage';
 import { getCurrentLanguage, getLanguageHeaders } from '@/lib/language';
+import type { MissionLocationTarget } from '@/lib/mission-location';
 
-type ApiMission = {
+type ApiMissionLocation = {
+  allowedRadius?: number | string | null;
+  allowed_radius?: number | string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  radius?: number | string | null;
+  targetLatitude?: number | string | null;
+  targetLongitude?: number | string | null;
+  target_latitude?: number | string | null;
+  target_longitude?: number | string | null;
+};
+
+type ApiMission = ApiMissionLocation & {
   code?: string;
   description?: string;
   id?: number | string;
@@ -52,7 +65,7 @@ type ApiMissionSubmission = {
   user_id?: number | string;
 };
 
-type ApiMissionSession = {
+type ApiMissionSession = ApiMissionLocation & {
   comment_deadline_at?: string | null;
   comment_ends_at?: string | null;
   commenting_ends_at?: string | null;
@@ -100,6 +113,7 @@ export type MissionSubmission = {
 };
 
 export type MissionSession = {
+  locationTarget?: MissionLocationTarget | null;
   completedAt?: string | null;
   createdAt?: string;
   createdByUserId: string;
@@ -271,6 +285,36 @@ async function requestJson<T>(path: string, method: 'GET' | 'POST', body?: Recor
 
 function pickFirstDateValue(...values: (string | null | undefined)[]) {
   return values.find((value) => typeof value === 'string' && value.trim()) ?? null;
+}
+
+function normalizeFiniteNumber(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeMissionLocationTarget(mission: ApiMission | undefined): MissionLocationTarget | null {
+  const targetLatitude = normalizeFiniteNumber(mission?.target_latitude ?? mission?.targetLatitude ?? mission?.latitude);
+  const targetLongitude = normalizeFiniteNumber(mission?.target_longitude ?? mission?.targetLongitude ?? mission?.longitude);
+  const allowedRadius = normalizeFiniteNumber(mission?.allowed_radius ?? mission?.allowedRadius ?? mission?.radius);
+
+  if (
+    targetLatitude === null
+    || targetLongitude === null
+    || allowedRadius === null
+    || targetLatitude < -90
+    || targetLatitude > 90
+    || targetLongitude < -180
+    || targetLongitude > 180
+    || allowedRadius < 0
+  ) {
+    return null;
+  }
+
+  return { allowedRadius, targetLatitude, targetLongitude };
 }
 
 function normalizeSimilarityScore(value: number | string | null | undefined) {
@@ -446,6 +490,7 @@ function normalizeSession(data: ApiMissionSession): MissionSession {
     createdAt: data.created_at,
     createdByUserId: String(data.created_by_user_id ?? ''),
     id: String(sessionId),
+    locationTarget: normalizeMissionLocationTarget(data.mission ?? data),
     members: (data.members ?? []).map((member) => ({
       joinedAt: member.joined_at,
       participationStatus: member.participation_status ?? null,
@@ -590,24 +635,11 @@ export async function readyMissionSession(sessionId: string) {
   return normalizeSession(data);
 }
 
-export type MissionParticipationLocation = {
-  accuracy_m: number;
-  latitude: number;
-  longitude: number;
-  measured_at: string;
-};
-
 export async function chooseMissionParticipation(
   sessionId: string,
   decision: 'PARTICIPATE' | 'PASS',
-  location?: MissionParticipationLocation,
 ) {
-  const body: Record<string, string | number> = { decision };
-  if (decision === 'PARTICIPATE' && location) {
-    Object.assign(body, location);
-  }
-
-  const data = await requestJson<ApiMissionSession>(`/mission-sessions/${encodeURIComponent(sessionId)}/participation`, 'POST', body);
+  const data = await requestJson<ApiMissionSession>(`/mission-sessions/${encodeURIComponent(sessionId)}/participation`, 'POST', { decision });
   return normalizeSession(data);
 }
 
