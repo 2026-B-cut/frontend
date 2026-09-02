@@ -1,8 +1,47 @@
-export type MissionLocationTarget = {
-  allowedRadius: number;
-  targetLatitude: number;
-  targetLongitude: number;
+export type MissionLocation = {
+  id: number | string;
+  label: string | null;
+  latitude: number;
+  longitude: number;
+  allowedRadiusMeters: number;
+  locationType: 'MISSION' | 'DEVELOPER';
 };
+
+export function normalizeMissionLocations(mission: unknown): MissionLocation[] {
+  if (!mission || typeof mission !== 'object') {
+    return [];
+  }
+
+  const rawLocations = (mission as { locations?: unknown }).locations;
+  if (!Array.isArray(rawLocations)) {
+    return [];
+  }
+
+  return rawLocations
+    .map((location, index) => normalizeMissionLocation(location, index))
+    .filter((location): location is MissionLocation => Boolean(location));
+}
+
+export function requiresMissionLocation(verificationType: string | null | undefined) {
+  return verificationType?.toUpperCase() === 'GPS_PHOTO';
+}
+
+export async function ensureMissionLocation(
+  verificationType: string | null | undefined,
+  locations: MissionLocation[] | null | undefined,
+) {
+  if (!requiresMissionLocation(verificationType)) {
+    return;
+  }
+
+  if (!locations?.length) {
+    throw new Error('미션 장소 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+
+  if (!(await isWithinMissionLocations(locations))) {
+    throw new Error('미션 장소 근처에서만 미션을 시작할 수 있어요.');
+  }
+}
 
 type DeviceLocation = {
   latitude: number;
@@ -46,13 +85,13 @@ export async function getCurrentDeviceLocation(): Promise<DeviceLocation> {
 
 export function calculateDistanceMeters(
   from: DeviceLocation,
-  to: Pick<MissionLocationTarget, 'targetLatitude' | 'targetLongitude'>,
+  to: Pick<MissionLocation, 'latitude' | 'longitude'>,
 ) {
   const earthRadiusMeters = 6371000;
-  const latitudeDelta = degreesToRadians(to.targetLatitude - from.latitude);
-  const longitudeDelta = degreesToRadians(to.targetLongitude - from.longitude);
+  const latitudeDelta = degreesToRadians(to.latitude - from.latitude);
+  const longitudeDelta = degreesToRadians(to.longitude - from.longitude);
   const fromLatitude = degreesToRadians(from.latitude);
-  const targetLatitude = degreesToRadians(to.targetLatitude);
+  const targetLatitude = degreesToRadians(to.latitude);
   const haversine = Math.sin(latitudeDelta / 2) ** 2
     + Math.cos(fromLatitude) * Math.cos(targetLatitude) * Math.sin(longitudeDelta / 2) ** 2;
   const clampedHaversine = Math.min(1, Math.max(0, haversine));
@@ -60,9 +99,58 @@ export function calculateDistanceMeters(
   return 2 * earthRadiusMeters * Math.atan2(Math.sqrt(clampedHaversine), Math.sqrt(1 - clampedHaversine));
 }
 
-export async function isWithinMissionRadius(target: MissionLocationTarget) {
+export async function isWithinMissionLocations(locations: MissionLocation[]) {
   const currentLocation = await getCurrentDeviceLocation();
-  return calculateDistanceMeters(currentLocation, target) <= target.allowedRadius;
+  return locations.some((location) => (
+    calculateDistanceMeters(currentLocation, location) <= location.allowedRadiusMeters
+  ));
+}
+
+function normalizeMissionLocation(location: unknown, index: number): MissionLocation | null {
+  if (!location || typeof location !== 'object') {
+    return null;
+  }
+
+  const item = location as Record<string, unknown>;
+  const latitude = normalizeFiniteNumber(item.latitude);
+  const longitude = normalizeFiniteNumber(item.longitude);
+  const allowedRadiusMeters = normalizeFiniteNumber(item.allowed_radius_m ?? item.allowedRadiusM ?? item.allowed_radius ?? item.allowedRadius ?? item.radius);
+
+  if (
+    latitude === null
+    || longitude === null
+    || allowedRadiusMeters === null
+    || latitude < -90
+    || latitude > 90
+    || longitude < -180
+    || longitude > 180
+    || allowedRadiusMeters < 0
+  ) {
+    return null;
+  }
+
+  const locationType = String(item.location_type ?? item.locationType ?? 'MISSION').toUpperCase();
+  if (locationType !== 'MISSION' && locationType !== 'DEVELOPER') {
+    return null;
+  }
+
+  return {
+    allowedRadiusMeters,
+    id: typeof item.id === 'number' || typeof item.id === 'string' ? item.id : `${locationType}-${index}`,
+    label: typeof item.label === 'string' ? item.label : null,
+    latitude,
+    locationType,
+    longitude,
+  };
+}
+
+function normalizeFiniteNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
 }
 
 function degreesToRadians(value: number) {

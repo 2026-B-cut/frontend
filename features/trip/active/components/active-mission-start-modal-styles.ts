@@ -52,6 +52,14 @@ export const styles = StyleSheet.create({
     maxWidth: 320,
     textAlign: 'center',
   },
+  missionStartMessage: {
+    color: '#C94435',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 20,
+    marginTop: 14,
+    textAlign: 'center',
+  },
   missionStartButton: {
     alignItems: 'center',
     borderRadius: 999,

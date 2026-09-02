@@ -11,6 +11,7 @@ import {
   createMissionSession,
   type MissionSession,
 } from '@/lib/mission-session-api';
+import { ensureMissionLocation } from '@/lib/mission-location';
 import { removeMissionFromSchedule, updateScheduleMissionDate, type TripSchedule, type TripScheduleMission } from '@/lib/trip-schedule-api';
 
 type UseActiveMissionActionsOptions = {
@@ -51,12 +52,25 @@ export function useActiveMissionActions({
   const [isSessionBusy, setIsSessionBusy] = useState(false);
   const [missionListVisible, setMissionListVisible] = useState(false);
   const [pendingMission, setPendingMission] = useState<TripScheduleMission | null>(null);
+  const [missionStartMessage, setMissionStartMessage] = useState('');
   const [dateEditorMissionId, setDateEditorMissionId] = useState<string | null>(null);
   const [busyScheduleMissionId, setBusyScheduleMissionId] = useState<string | null>(null);
   const [missionListMessage, setMissionListMessage] = useState('');
   const isMissionBlockedForPlay = useCallback((mission: TripScheduleMission) => {
     return Boolean(activeBlockingSession?.scheduleMissionId && activeBlockingSession.scheduleMissionId !== mission.scheduleMissionId);
   }, [activeBlockingSession]);
+  const canEnterMission = useCallback(async (mission: TripScheduleMission, existingSession?: MissionSession, reportError: (message: string) => void = onMessage) => {
+    try {
+      await ensureMissionLocation(
+        existingSession?.verificationType ?? mission.verificationType,
+        existingSession?.locations ?? mission.locations,
+      );
+      return true;
+    } catch (error) {
+      reportError(error instanceof Error ? error.message : '미션 장소를 확인하지 못했어요.');
+      return false;
+    }
+  }, [onMessage]);
 
   const handleChangeMissionDate = async (mission: TripScheduleMission, plannedDate: string) => {
     if (!schedule?.scheduleId || busyScheduleMissionId || plannedDate === mission.plannedDate) {
@@ -128,7 +142,7 @@ export function useActiveMissionActions({
     router.push({ pathname: '/mission/detail', params: { scheduleId: schedule.scheduleId } });
   };
 
-  const openMissionSession = (mission: TripScheduleMission) => {
+  const openMissionSession = async (mission: TripScheduleMission) => {
     if (!schedule?.scheduleId || isSessionBusy) {
       return;
     }
@@ -138,30 +152,40 @@ export function useActiveMissionActions({
       return;
     }
 
-    onMessage('');
-    setMissionListVisible(false);
-
     const existingSession = missionSessions[mission.scheduleMissionId];
     if (
       existingSession
       && existingSession.id !== suppressedParticipationSessionId
       && ['WAITING', 'READY'].includes(existingSession.status)
     ) {
-      router.push({
-        pathname: '/trip/participation',
-        params: {
-          scheduleId: schedule.scheduleId,
-          scheduleMissionId: mission.scheduleMissionId,
-          sessionId: existingSession.id,
-          ...(existingSession.verificationType || mission.verificationType
-            ? { verificationType: existingSession.verificationType ?? mission.verificationType ?? '' }
-            : {}),
-        },
-      });
+      setIsSessionBusy(true);
+      try {
+        if (!(await canEnterMission(mission, existingSession))) {
+          return;
+        }
+
+        onMessage('');
+        setMissionListVisible(false);
+        router.push({
+          pathname: '/trip/participation',
+          params: {
+            scheduleId: schedule.scheduleId,
+            scheduleMissionId: mission.scheduleMissionId,
+            sessionId: existingSession.id,
+            ...(existingSession.verificationType || mission.verificationType
+              ? { verificationType: existingSession.verificationType ?? mission.verificationType ?? '' }
+              : {}),
+          },
+        });
+      } finally {
+        setIsSessionBusy(false);
+      }
       return;
     }
 
-    // 모달을 먼저 표시하고, 렌더링이 끝난 뒤 GPS 위치 확인을 시작합니다.
+    onMessage('');
+    setMissionStartMessage('');
+    setMissionListVisible(false);
     setPendingMission(mission);
   };
 
@@ -175,13 +199,17 @@ export function useActiveMissionActions({
 
     try {
       setIsSessionBusy(true);
-      onMessage('');
+      setMissionStartMessage('');
       leaderStartingMissionRef.current = true;
+      if (!(await canEnterMission(mission, undefined, setMissionStartMessage))) {
+        return;
+      }
       const createdSession = await createMissionSession(schedule.scheduleId, mission.scheduleMissionId);
       createdSessionId = createdSession.id;
       let nextSession = createdSession;
 
       rememberFeedSession(nextSession, mission.scheduleMissionId);
+      setMissionStartMessage('');
       setPendingMission(null);
       router.push({
         pathname: '/trip/participation',
@@ -237,11 +265,13 @@ export function useActiveMissionActions({
     missionListVisible,
     onClosePendingMission: () => {
       setPendingMission(null);
+      setMissionStartMessage('');
     },
     openFeedSession,
     openMissionDetail,
     openMissionSession,
     pendingMission,
+    missionStartMessage,
     setDateEditorMissionId,
     setMissionListVisible,
     startPendingMission,

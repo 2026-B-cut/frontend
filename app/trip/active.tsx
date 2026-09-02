@@ -220,6 +220,7 @@ export default function ActiveTripScreen() {
       <ActiveMissionStartModal
         bottomSafeInset={bottomSafeInset}
         isSessionBusy={actions.isSessionBusy}
+        missionStartMessage={actions.missionStartMessage}
         onClose={actions.onClosePendingMission}
         onStart={actions.startPendingMission}
         pendingMission={actions.pendingMission}

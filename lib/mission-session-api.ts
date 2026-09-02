@@ -3,18 +3,32 @@ import { Platform } from 'react-native';
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
 import { getAuthItem } from '@/lib/auth-storage';
 import { getCurrentLanguage, getLanguageHeaders } from '@/lib/language';
-import type { MissionLocationTarget } from '@/lib/mission-location';
+import { normalizeMissionLocations, type MissionLocation } from '@/lib/mission-location';
 
 type ApiMissionLocation = {
   allowedRadius?: number | string | null;
   allowed_radius?: number | string | null;
+  coordinates?: [number | string, number | string] | null;
+  locations?: unknown[];
   latitude?: number | string | null;
+  lat?: number | string | null;
+  location?: ApiMissionLocation | null;
+  locationTarget?: ApiMissionLocation | null;
+  location_target?: ApiMissionLocation | null;
+  location_latitude?: number | string | null;
+  location_longitude?: number | string | null;
+  location_radius?: number | string | null;
   longitude?: number | string | null;
+  lng?: number | string | null;
+  mission_location?: ApiMissionLocation | null;
+  geometry?: { coordinates?: [number | string, number | string] | null } | null;
   radius?: number | string | null;
   targetLatitude?: number | string | null;
+  target_location?: ApiMissionLocation | null;
   targetLongitude?: number | string | null;
   target_latitude?: number | string | null;
   target_longitude?: number | string | null;
+  verification_type?: string | null;
 };
 
 type ApiMission = ApiMissionLocation & {
@@ -113,7 +127,7 @@ export type MissionSubmission = {
 };
 
 export type MissionSession = {
-  locationTarget?: MissionLocationTarget | null;
+  locations: MissionLocation[];
   completedAt?: string | null;
   createdAt?: string;
   createdByUserId: string;
@@ -296,27 +310,6 @@ function normalizeFiniteNumber(value: number | string | null | undefined) {
   return Number.isFinite(numberValue) ? numberValue : null;
 }
 
-function normalizeMissionLocationTarget(mission: ApiMission | undefined): MissionLocationTarget | null {
-  const targetLatitude = normalizeFiniteNumber(mission?.target_latitude ?? mission?.targetLatitude ?? mission?.latitude);
-  const targetLongitude = normalizeFiniteNumber(mission?.target_longitude ?? mission?.targetLongitude ?? mission?.longitude);
-  const allowedRadius = normalizeFiniteNumber(mission?.allowed_radius ?? mission?.allowedRadius ?? mission?.radius);
-
-  if (
-    targetLatitude === null
-    || targetLongitude === null
-    || allowedRadius === null
-    || targetLatitude < -90
-    || targetLatitude > 90
-    || targetLongitude < -180
-    || targetLongitude > 180
-    || allowedRadius < 0
-  ) {
-    return null;
-  }
-
-  return { allowedRadius, targetLatitude, targetLongitude };
-}
-
 function normalizeSimilarityScore(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === '') {
     return null;
@@ -490,7 +483,9 @@ function normalizeSession(data: ApiMissionSession): MissionSession {
     createdAt: data.created_at,
     createdByUserId: String(data.created_by_user_id ?? ''),
     id: String(sessionId),
-    locationTarget: normalizeMissionLocationTarget(data.mission ?? data),
+    locations: normalizeMissionLocations(data.mission).length > 0
+      ? normalizeMissionLocations(data.mission)
+      : normalizeMissionLocations(data),
     members: (data.members ?? []).map((member) => ({
       joinedAt: member.joined_at,
       participationStatus: member.participation_status ?? null,
@@ -509,7 +504,7 @@ function normalizeSession(data: ApiMissionSession): MissionSession {
     startedAt: data.started_at,
     status: status as MissionSessionStatus,
     submissions: (data.submissions ?? []).map(normalizeSubmission).filter((submission) => submission.photoUrl),
-    verificationType: data.mission?.verification_type ?? null,
+    verificationType: data.mission?.verification_type ?? data.verification_type ?? null,
     winnerUserId: data.winner_user_id === null || data.winner_user_id === undefined ? null : String(data.winner_user_id),
   };
 }

@@ -1,5 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BackHandler } from 'react-native';
 
 import { MissionCaptureCameraView } from '@/features/trip/capture/components/mission-capture-camera-view';
 import { MissionCapturePermissionState } from '@/features/trip/capture/components/mission-capture-permission-state';
@@ -11,7 +13,7 @@ import { useMissionCaptureUpload } from '@/features/trip/capture/hooks/use-missi
 import { getParamValue, getRemainingMs } from '@/features/trip/trip-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { getAuthItem } from '@/lib/auth-storage';
-import { isWithinMissionRadius } from '@/lib/mission-location';
+import { isWithinMissionLocations } from '@/lib/mission-location';
 import { sanitizeMissionPhoto } from '@/lib/mission-photo';
 import type { MissionSession } from '@/lib/mission-session-api';
 import type { TripScheduleMission } from '@/lib/trip-schedule-api';
@@ -34,6 +36,29 @@ export default function MissionCaptureScreen() {
   const [isLocationVerified, setIsLocationVerified] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [now, setNow] = useState(() => Date.now());
+
+  const goBackToActive = useCallback(() => {
+    if (hasNavigatedAway.current) {
+      return;
+    }
+
+    hasNavigatedAway.current = true;
+    router.replace({
+      pathname: '/trip/active',
+      ...(scheduleId ? { params: { scheduleId } } : {}),
+    });
+  }, [scheduleId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        goBackToActive();
+        return true;
+      });
+
+      return () => subscription.remove();
+    }, [goBackToActive]),
+  );
 
   const missionDeadline = getMissionDeadline(session?.shootingEndsAt, session?.photoUploadEndsAt);
   const missionRemainingMs = getRemainingMs(missionDeadline, now);
@@ -93,7 +118,7 @@ export default function MissionCaptureScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const locationTarget = useMemo(() => session?.locationTarget ?? mission?.locationTarget ?? null, [mission?.locationTarget, session?.locationTarget]);
+  const missionLocations = useMemo(() => session?.locations ?? mission?.locations ?? [], [mission?.locations, session?.locations]);
   const requiresLocalLocation = (session?.verificationType ?? mission?.verificationType)?.toUpperCase() === 'GPS_PHOTO';
   const hasMissionData = Boolean(session || mission);
   const canCaptureByLocation = !requiresLocalLocation || isLocationVerified;
@@ -105,7 +130,7 @@ export default function MissionCaptureScreen() {
       return;
     }
 
-    if (!locationTarget) {
+    if (missionLocations.length === 0) {
       setIsLocationVerified(false);
       setLocationError('미션 장소 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.');
       return;
@@ -113,7 +138,7 @@ export default function MissionCaptureScreen() {
 
     setIsLocationChecking(true);
     try {
-      const isInside = await isWithinMissionRadius(locationTarget);
+      const isInside = await isWithinMissionLocations(missionLocations);
       setIsLocationVerified(isInside);
       setLocationError(isInside ? '' : '미션 장소 근처에서만 사진을 촬영할 수 있어요.');
     } catch (error) {
@@ -122,7 +147,7 @@ export default function MissionCaptureScreen() {
     } finally {
       setIsLocationChecking(false);
     }
-  }, [locationTarget, requiresLocalLocation]);
+  }, [missionLocations, requiresLocalLocation]);
 
   useEffect(() => {
     if (!hasMissionData) {
@@ -170,11 +195,11 @@ export default function MissionCaptureScreen() {
   const camera = useMissionCaptureCamera({ bottomSafeInset, height, isLocationChecking, isLocationVerified: canCaptureByLocation, isShootingExpired, onPhotoCaptured: handlePhotoCaptured });
 
   if (!camera.permission) {
-    return <MissionCapturePermissionState bottomSafeInset={bottomSafeInset} onClose={() => router.back()} topSafeInset={topSafeInset} variant="loading" />;
+    return <MissionCapturePermissionState bottomSafeInset={bottomSafeInset} onClose={goBackToActive} topSafeInset={topSafeInset} variant="loading" />;
   }
 
   if (!camera.permission.granted) {
-    return <MissionCapturePermissionState bottomSafeInset={bottomSafeInset} onClose={() => router.back()} onRequestPermission={camera.requestPermission} topSafeInset={topSafeInset} variant="denied" />;
+    return <MissionCapturePermissionState bottomSafeInset={bottomSafeInset} onClose={goBackToActive} onRequestPermission={camera.requestPermission} topSafeInset={topSafeInset} variant="denied" />;
   }
 
   if (isNonParticipant) {
@@ -225,7 +250,7 @@ export default function MissionCaptureScreen() {
       missionCardPanResponder={camera.missionCardPanResponder}
       missionCardTranslateY={camera.missionCardTranslateY}
       missionError={locationError || missionError}
-      onClose={() => router.back()}
+      onClose={goBackToActive}
       session={session}
       shootingRemainingMs={shootingRemainingMs}
       toggleFacing={camera.toggleFacing}

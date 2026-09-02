@@ -12,6 +12,7 @@ import { styles } from './active-mission-start-modal-styles';
 type ActiveMissionStartModalProps = {
   bottomSafeInset: number;
   isSessionBusy: boolean;
+  missionStartMessage: string;
   onClose: () => void;
   onStart: () => void;
   pendingMission: TripScheduleMission | null;
@@ -21,6 +22,7 @@ type ActiveMissionStartModalProps = {
 export function ActiveMissionStartModal({
   bottomSafeInset,
   isSessionBusy,
+  missionStartMessage,
   onClose,
   onStart,
   pendingMission,
@@ -45,6 +47,7 @@ export function ActiveMissionStartModal({
             {pendingMission?.emojiUrl ? <Image contentFit="contain" source={{ uri: pendingMission.emojiUrl }} style={styles.missionStartCardIcon} /> : <Ionicons color={pendingMissionLevel.titleColor} name="camera-outline" size={72} />}
 
             <Text numberOfLines={3} style={[styles.missionStartDescription, { color: pendingMissionLevel.accentColor }]}>{pendingMission?.description ?? '미션 설명이 아직 없습니다.'}</Text>
+            {missionStartMessage ? <Text style={styles.missionStartMessage}>{missionStartMessage}</Text> : null}
             <ScalePressable
               disabled={isSessionBusy}
               onPress={onStart}

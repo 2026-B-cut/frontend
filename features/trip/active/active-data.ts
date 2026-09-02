@@ -8,6 +8,7 @@ import { getAuthItem, setAuthItem } from '@/lib/auth-storage';
 import {
   MissionSessionApiError,
   getPassedMissionSubmissions,
+  hasResolvedMissionParticipants,
   type MissionSession,
 } from '@/lib/mission-session-api';
 import type { TripInvite } from '@/lib/trip-invite-api';
@@ -122,6 +123,14 @@ export function getCompletedParticipantIds(session: MissionSession) {
 
 export function isFinishedSession(session: MissionSession | undefined) {
   const soloMember = session?.members.length === 1 ? session.members[0] : undefined;
+  const hasPassedSubmission = getPassedMissionSubmissions(session).length > 0;
+  const isAllParticipantsFailed = Boolean(
+    session
+      && session.status !== 'COMPLETED'
+      && session.status !== 'CANCELLED'
+      && !hasPassedSubmission
+      && hasResolvedMissionParticipants(session),
+  );
   const groupDeadline = session?.photoUploadEndsAt ?? session?.shootingEndsAt;
   const groupDeadlineTime = groupDeadline ? new Date(groupDeadline).getTime() : NaN;
   const isGroupTimedOutWithoutSuccess = Boolean(
@@ -129,7 +138,7 @@ export function isFinishedSession(session: MissionSession | undefined) {
       && session.members.length > 1
       && session.status !== 'COMPLETED'
       && session.status !== 'CANCELLED'
-      && getPassedMissionSubmissions(session).length === 0
+      && !hasPassedSubmission
       && Number.isFinite(groupDeadlineTime)
       && groupDeadlineTime <= Date.now(),
   );
@@ -153,7 +162,7 @@ export function isFinishedSession(session: MissionSession | undefined) {
       ),
   );
 
-  return Boolean(session && (session.status === 'COMPLETED' || session.status === 'CANCELLED' || isSoloTimedOut || isGroupTimedOutWithoutSuccess));
+  return Boolean(session && (session.status === 'COMPLETED' || session.status === 'CANCELLED' || isAllParticipantsFailed || isSoloTimedOut || isGroupTimedOutWithoutSuccess));
 }
 
 export function hasAllPassedMemberSubmissions(session: MissionSession, requiredMemberCount: number) {
