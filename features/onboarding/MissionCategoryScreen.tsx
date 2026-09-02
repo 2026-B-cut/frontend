@@ -53,6 +53,7 @@ export default function MissionCategoryScreen() {
   const { bottomSafeInset, height, topSafeInset, width } = useResponsiveLayout();
   const [stepIndex, setStepIndex] = useState(0);
   const [onboardingVersion, setOnboardingVersion] = useState<number | null>(null);
+  const [isFirstImageReady, setIsFirstImageReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const isHandlingStep = useRef(false);
   const currentStep = onboardingSteps[stepIndex];
@@ -102,9 +103,23 @@ export default function MissionCategoryScreen() {
   useEffect(() => {
     // The onboarding SVGs contain large embedded PNGs. Load them in parallel
     // when the first step opens so changing steps can reuse the memory cache.
-    onboardingSteps.forEach(({ image }) => {
+    let isActive = true;
+
+    void Image.loadAsync(onboardingSteps[0].image)
+      .catch(() => undefined)
+      .then(() => {
+        if (isActive) {
+          setIsFirstImageReady(true);
+        }
+      });
+
+    onboardingSteps.slice(1).forEach(({ image }) => {
       void Image.loadAsync(image).catch(() => undefined);
     });
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -157,7 +172,7 @@ export default function MissionCategoryScreen() {
     setStepIndex((currentIndex) => currentIndex + 1);
   };
 
-  if (onboardingVersion === null) {
+  if (onboardingVersion === null || !isFirstImageReady) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator color="#63B5CD" />

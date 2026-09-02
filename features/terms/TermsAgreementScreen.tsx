@@ -174,10 +174,11 @@ export default function TermsAgreementScreen() {
             disabled={!allSelected || isCompleting}
             onPress={completeAgreement}
             style={[styles.completeButton, allSelected && styles.completeButtonSelected]}>
-            {!isCompleting ? (
-              <TextBlock style={[styles.completeButtonTextOverlay, allSelected && styles.completeButtonTextSelected]}>{'\uC644\uB8CC'}</TextBlock>
-            ) : null}
-            {isCompleting ? <ActivityIndicator color="#63B5CD" /> : <TextBlock style={styles.completeButtonText}>완료</TextBlock>}
+            {isCompleting ? (
+              <ActivityIndicator color={allSelected ? '#FFFFFF' : '#409CB7'} />
+            ) : (
+              <TextBlock style={[styles.completeButtonText, allSelected && styles.completeButtonTextSelected]}>완료</TextBlock>
+            )}
           </Pressable>
           {errorMessage ? <TextBlock style={styles.errorText}>{errorMessage}</TextBlock> : null}
         </View>
@@ -313,18 +314,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#63B5CD',
   },
   completeButtonText: {
-    color: 'transparent',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  completeButtonTextOverlay: {
     color: '#409CB7',
     fontSize: 16,
     fontWeight: '500',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    textAlign: 'center',
   },
   completeButtonTextSelected: {
     color: '#FFFFFF',
