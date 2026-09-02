@@ -1,12 +1,10 @@
 // main 홈 화면을 구성하고 매거진 상세 이동을 연결합니다.
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 
 import { TUTORIAL_AUTO_START_ENABLED, useTutorial } from '@/components/tutorial-provider';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { getAuthItem } from '@/lib/auth-storage';
-import { hasSeenWelcomeScreen } from '@/lib/tutorial-storage';
 
 import { EmptyMagazineState } from './components/empty-magazine-state';
 import { MainHeader } from './components/main-header';
@@ -19,7 +17,7 @@ export default function MainHomeScreen() {
   const main = useMainHome();
   const { start: startTutorial } = useTutorial();
   const shouldShowEmptyMagazine = main.hasLoadedMagazine && main.magazinePhotoUrls.length === 0 && !main.magazinePreviewUrl;
-  const [hasCheckedWelcome, setHasCheckedWelcome] = useState(false);
+  const hasCheckedWelcome = true;
 
   const openMagazine = () => {
     if (!main.magazineScheduleId) {
@@ -31,36 +29,6 @@ export default function MainHomeScreen() {
       params: { scheduleId: main.magazineScheduleId },
     });
   };
-
-  useEffect(() => {
-    let isActive = true;
-    const userId = getAuthItem('user_id');
-
-    if (!userId) {
-      setHasCheckedWelcome(true);
-      return () => {
-        isActive = false;
-      };
-    }
-
-    setHasCheckedWelcome(false);
-    void hasSeenWelcomeScreen(userId).then((hasSeen) => {
-      if (!isActive) {
-        return;
-      }
-
-      if (!hasSeen) {
-        router.replace('/welcome');
-        return;
-      }
-
-      setHasCheckedWelcome(true);
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (TUTORIAL_AUTO_START_ENABLED && shouldShowEmptyMagazine && hasCheckedWelcome) {

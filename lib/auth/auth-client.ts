@@ -6,6 +6,31 @@ import { API_BASE_URL } from '@/lib/api-config';
 import { clearAuthSession, saveAuthTokens } from './auth-session';
 import type { AuthTokens } from './auth-types';
 
+type ErrorResponseData = {
+  detail?: unknown;
+  message?: unknown;
+};
+
+export class AuthApiError extends Error {
+  readonly code?: string;
+  readonly data: unknown;
+  readonly response: { status: number; data: unknown };
+  readonly status: number;
+
+  constructor(status: number, data: unknown, message: string, code?: string) {
+    super(message);
+    this.name = 'AuthApiError';
+    this.code = code;
+    this.data = data;
+    this.response = { data, status };
+    this.status = status;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export async function readAuthResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   let data: unknown = {};
@@ -27,15 +52,26 @@ export async function readAuthResponse<T>(res: Response): Promise<T> {
   }
 
   if (!res.ok) {
-    const responseData = data as { detail?: unknown; message?: unknown } | null;
-    const message = responseData?.detail ?? responseData?.message ?? '인증 요청에 실패했습니다.';
-    throw new Error(
-      Array.isArray(message)
-        ? message.map((item) => `${item.loc?.join('.') ?? 'field'}: ${item.msg}`).join('\n')
-        : typeof message === 'string'
-          ? message
-          : '인증 요청에 실패했습니다.',
-    );
+    const responseData = isRecord(data) ? (data as ErrorResponseData) : null;
+    const detail = responseData?.detail;
+    const code = isRecord(detail) && typeof detail.code === 'string' ? detail.code : undefined;
+    const message = isRecord(detail) ? detail.message : detail ?? responseData?.message;
+    const formattedMessage = Array.isArray(message)
+      ? message
+          .map((item) => {
+            if (!isRecord(item)) {
+              return String(item);
+            }
+
+            const location = Array.isArray(item.loc) ? item.loc.join('.') : 'field';
+            return `${location}: ${item.msg ?? '잘못된 값입니다.'}`;
+          })
+          .join('\n')
+      : typeof message === 'string'
+        ? message
+        : '인증 요청에 실패했습니다.';
+
+    throw new AuthApiError(res.status, data, formattedMessage, code);
   }
 
   return data as T;
@@ -60,6 +96,19 @@ export async function postJson<T>(path: string, body: Record<string, string>): P
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+export async function postJsonWithAuth<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetchWithAuth(`${API_BASE_URL}${path}`, {
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+      ...getLanguageHeaders(),
+    },
+    method: 'POST',
+  });
+
+  return readAuthResponse<T>(res);
 }
 
 export async function patchJson<T>(path: string, body: Record<string, string>): Promise<T> {

@@ -7,6 +7,7 @@ import { fetchMe } from '@/lib/auth-api';
 import { getAuthItem } from '@/lib/auth-storage';
 import { getMagazine, MagazineApiError } from '@/lib/magazine-api';
 import { getLatestMissionSession, type MissionSession } from '@/lib/mission-session-api';
+import { cancelMagazineNotification, scheduleMagazineNotification } from '@/lib/mission-notification';
 import { getCachedTripSchedules, getTripSchedule, listTripSchedules, type TripSchedule } from '@/lib/trip-schedule-api';
 
 import { getResultPhotoUrl, getScheduleEndTime, isClosedSchedule } from '../main-home-data';
@@ -123,6 +124,25 @@ export function useMainHome() {
           } catch {
             schedules = getCachedTripSchedules();
           }
+
+          await Promise.all(schedules.map(async (schedule) => {
+            if (!schedule.endDate) {
+              return;
+            }
+
+            try {
+              await getMagazine(schedule.scheduleId);
+              await cancelMagazineNotification(schedule.scheduleId);
+            } catch (error) {
+              if (error instanceof MagazineApiError && error.status === 404) {
+                await scheduleMagazineNotification({
+                  endDate: schedule.endDate,
+                  scheduleId: schedule.scheduleId,
+                  scheduleName: schedule.roomName,
+                });
+              }
+            }
+          }));
 
           let latestClosedSchedule = schedules
             .filter(isClosedSchedule)

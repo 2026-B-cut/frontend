@@ -6,40 +6,62 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, t
 import type { ReactNode } from 'react';
 
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { getAuthItem, getPersistentAuthItem } from '@/lib/auth-storage';
-import { markWelcomeScreenCompleted } from '@/lib/tutorial-storage';
-import { markTermsAccepted } from '@/lib/terms-storage';
+import {
+  AuthApiError,
+  fetchLegalDocuments,
+  saveTermsConsent,
+  type LegalDocument,
+  type LegalDocumentType,
+} from '@/lib/auth-api';
+import { getAuthItem } from '@/lib/auth-storage';
+import { getRequestErrorMessage } from '@/lib/auth-error';
 
-import { TERMS_DOCUMENTS, type TermsDocumentId } from './terms-data';
 
 const checkIcon = require('@/assets/svg/terms/check.svg');
 const nonCheckIcon = require('@/assets/svg/terms/non_check.svg');
 
 export default function TermsAgreementScreen() {
   const { bottomSafeInset, height, horizontalPadding } = useResponsiveLayout();
-  const [selectedTerms, setSelectedTerms] = useState<TermsDocumentId[]>([]);
+  const [documents, setDocuments] = useState<LegalDocument[]>([]);
+  const [requiredVersion, setRequiredVersion] = useState<string | null>(null);
+  const [selectedTerms, setSelectedTerms] = useState<LegalDocumentType[]>([]);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [userId, setUserId] = useState<string | null>(() => getAuthItem('user_id'));
-  const allSelected = selectedTerms.length === TERMS_DOCUMENTS.length;
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const requiredDocuments = useMemo(() => documents.filter((document) => document.required), [documents]);
+  const allSelected = requiredDocuments.length > 0 && requiredDocuments.every(({ type }) => selectedTerms.includes(type));
 
   useEffect(() => {
     let isActive = true;
 
-    const restoreUserId = async () => {
-      const currentUserId = getAuthItem('user_id') ?? await getPersistentAuthItem('user_id');
-
-      if (!isActive) {
+    const loadScreen = async () => {
+      if (!getAuthItem('access_token')) {
+        router.replace('/login');
         return;
       }
 
-      if (currentUserId) {
-        setUserId(currentUserId);
-      } else {
-        router.replace('/login');
+      try {
+        const response = await fetchLegalDocuments();
+
+        if (!isActive) {
+          return;
+        }
+
+        setRequiredVersion(response.required_version);
+        setDocuments(response.documents);
+        setErrorMessage('');
+      } catch (error) {
+        if (isActive) {
+          setErrorMessage(getRequestErrorMessage(error));
+        }
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
 
-    void restoreUserId();
+    void loadScreen();
 
     return () => {
       isActive = false;
@@ -48,28 +70,64 @@ export default function TermsAgreementScreen() {
 
   const selectedSet = useMemo(() => new Set(selectedTerms), [selectedTerms]);
 
-  const toggleTerm = (id: TermsDocumentId) => {
+  const toggleTerm = (id: LegalDocumentType) => {
     setSelectedTerms((current) => (current.includes(id) ? current.filter((termId) => termId !== id) : [...current, id]));
   };
 
   const toggleAll = () => {
-    setSelectedTerms(allSelected ? [] : TERMS_DOCUMENTS.map((document) => document.id));
+    setSelectedTerms(allSelected ? [] : requiredDocuments.map((document) => document.type));
   };
 
   const completeAgreement = async () => {
-    if (!userId || !allSelected || isCompleting) {
+    if (!getAuthItem('access_token') || !allSelected || isCompleting) {
+      return;
+    }
+
+    if (!requiredVersion) {
       return;
     }
 
     setIsCompleting(true);
-    await markTermsAccepted(userId);
-    // 약관 완료 후에는 기존 환영 화면을 건너뛰고 바로 온보딩을 시작합니다.
-    await markWelcomeScreenCompleted(userId);
-    router.replace('/onboarding/step1');
+
+    try {
+      const agreements: Record<LegalDocumentType, boolean> = {
+        location: selectedTerms.includes('location'),
+        privacy: selectedTerms.includes('privacy'),
+        service: selectedTerms.includes('service'),
+      };
+
+      await saveTermsConsent(requiredVersion, agreements);
+      // 기존 약관 완료 후 온보딩 첫 단계로 진입하는 흐름을 유지합니다.
+      router.replace('/onboarding/step1');
+    } catch (error) {
+      if (error instanceof AuthApiError && error.code === 'TERMS_VERSION_MISMATCH') {
+        try {
+          const latest = await fetchLegalDocuments(true);
+          setRequiredVersion(latest.required_version);
+          setDocuments(latest.documents);
+          setSelectedTerms([]);
+          setErrorMessage('약관이 업데이트되어 최신 내용을 다시 확인해 주세요.');
+        } catch (refreshError) {
+          setErrorMessage(getRequestErrorMessage(refreshError));
+        }
+      } else {
+        setErrorMessage(getRequestErrorMessage(error));
+      }
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
-  if (!userId) {
+  if (!getAuthItem('access_token') || isLoading) {
     return <View style={styles.emptyScreen} />;
+  }
+
+  if (errorMessage && documents.length === 0) {
+    return (
+      <View style={styles.errorScreen}>
+        <TextBlock style={styles.errorText}>{errorMessage}</TextBlock>
+      </View>
+    );
   }
 
   return (
@@ -90,20 +148,20 @@ export default function TermsAgreementScreen() {
           <TextBlock style={styles.groupLabel}>찌그까 서비스 약관</TextBlock>
 
           <View style={styles.termList}>
-            {TERMS_DOCUMENTS.map((document) => {
-              const isSelected = selectedSet.has(document.id);
+            {requiredDocuments.map((document) => {
+              const isSelected = selectedSet.has(document.type);
 
               return (
-                <View key={document.id} style={styles.termRow}>
+                <View key={document.type} style={styles.termRow}>
                   <Pressable
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: isSelected }}
-                    onPress={() => toggleTerm(document.id)}
+                    onPress={() => toggleTerm(document.type)}
                     style={styles.termCheckButton}>
                     <Image source={isSelected ? checkIcon : nonCheckIcon} style={styles.rowCheck} />
-                    <TextBlock style={styles.termLabel}>{document.listTitle}</TextBlock>
+                    <TextBlock style={styles.termLabel}>{`[필수] ${document.title}`}</TextBlock>
                   </Pressable>
-                  <Pressable accessibilityLabel={`${document.listTitle} 상세 보기`} onPress={() => router.push({ pathname: '/terms-detail', params: { document: document.id } })} style={styles.detailButton}>
+                  <Pressable accessibilityLabel={`${document.title} 상세 보기`} onPress={() => router.push({ pathname: '/terms-detail', params: { document: document.type } })} style={styles.detailButton}>
                     <Text style={styles.detailChevron}>›</Text>
                   </Pressable>
                 </View>
@@ -121,6 +179,7 @@ export default function TermsAgreementScreen() {
             ) : null}
             {isCompleting ? <ActivityIndicator color="#63B5CD" /> : <TextBlock style={styles.completeButtonText}>완료</TextBlock>}
           </Pressable>
+          {errorMessage ? <TextBlock style={styles.errorText}>{errorMessage}</TextBlock> : null}
         </View>
       </View>
     </View>
@@ -141,6 +200,19 @@ const styles = StyleSheet.create({
   emptyScreen: {
     backgroundColor: 'transparent',
     flex: 1,
+  },
+  errorScreen: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    color: '#8A9194',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
   },
   sheet: {
     backgroundColor: '#FFFFFF',

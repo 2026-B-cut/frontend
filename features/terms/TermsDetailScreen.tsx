@@ -1,18 +1,46 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 import type { ReactNode } from 'react';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { ScalePressable } from '@/components/scale-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { fetchLegalDocuments, getCachedLegalDocument, type LegalDocument, type LegalDocumentType } from '@/lib/auth-api';
 
-import { getTermsDocument } from './terms-data';
+function isLegalDocumentType(value: string | string[] | undefined): value is LegalDocumentType {
+  const type = Array.isArray(value) ? value[0] : value;
+  return type === 'service' || type === 'privacy' || type === 'location';
+}
 
 export default function TermsDetailScreen() {
   const { bottomSafeInset, height, horizontalPadding, topSafeInset, width } = useResponsiveLayout();
   const params = useLocalSearchParams<{ document?: string | string[] }>();
-  const document = getTermsDocument(params.document);
+  const documentType = isLegalDocumentType(params.document) ? (Array.isArray(params.document) ? params.document[0] : params.document) : 'service';
+  const [document, setDocument] = useState<LegalDocument | null>(() => getCachedLegalDocument(documentType));
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (document) {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    void fetchLegalDocuments()
+      .then((response) => {
+        if (isActive) {
+          setDocument(response.documents.find((item) => item.type === documentType) ?? null);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, [document, documentType]);
 
   return (
     <View style={styles.container}>
@@ -34,26 +62,8 @@ export default function TermsDetailScreen() {
           <Ionicons color="#10161F" name="chevron-back" size={29} />
         </ScalePressable>
 
-        <TextBlock style={styles.title}>{document.detailTitle}</TextBlock>
-
-        {document.sections.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <TextBlock style={styles.sectionTitle}>{section.title}</TextBlock>
-            {section.blocks.map((block, blockIndex) => {
-              if (block.type === 'paragraph') {
-                return <TextBlock key={`${section.title}-paragraph-${blockIndex}`} style={styles.paragraph}>{block.text}</TextBlock>;
-              }
-
-              return (
-                <View key={`${section.title}-list-${blockIndex}`} style={styles.list}>
-                  {block.items.map((item, itemIndex) => (
-                    <TextBlock key={`${section.title}-${itemIndex}`} style={styles.listItem}>{`${itemIndex + 1}. ${item}`}</TextBlock>
-                  ))}
-                </View>
-              );
-            })}
-          </View>
-        ))}
+        <TextBlock style={styles.title}>{document?.title ?? '약관'}</TextBlock>
+        <TextBlock style={styles.content}>{document?.content ?? '약관 내용을 불러오는 중입니다.'}</TextBlock>
       </ScrollView>
     </View>
   );
@@ -84,28 +94,10 @@ const styles = StyleSheet.create({
     marginTop: 39,
     marginBottom: 20,
   },
-  section: {
-    marginTop: 37,
-  },
-  sectionTitle: {
-    color: '#10161F',
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: -0.4,
-    lineHeight: 25,
-    marginBottom: 15,
-  },
-  paragraph: {
+  content: {
     color: '#9EA5A9',
     fontSize: 14,
     lineHeight: 21,
-  },
-  list: {
-    gap: 10,
-  },
-  listItem: {
-    color: '#9EA5A9',
-    fontSize: 14,
-    lineHeight: 18,
+    marginTop: 16,
   },
 });

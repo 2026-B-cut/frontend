@@ -115,6 +115,9 @@ export const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginLeft: 10,
   },
+  disabledToggle: {
+    opacity: 0.5,
+  },
   toggle: {
     borderRadius: 999,
     height: 28,

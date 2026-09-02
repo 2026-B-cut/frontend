@@ -7,8 +7,8 @@ import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 import { ScalePressable } from '@/components/scale-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { fetchAuthBootstrap } from '@/lib/auth-api';
 import { getAuthItem } from '@/lib/auth-storage';
-import { hasSeenWelcomeScreen, markWelcomeScreenCompleted } from '@/lib/tutorial-storage';
 
 const welcomeImage = require('@/assets/svg/main/sig_home.svg');
 const onboardingStep1Image = require('@/assets/svg/onboarding/step1.svg');
@@ -30,17 +30,26 @@ export default function WelcomeScreen() {
       };
     }
 
-    void hasSeenWelcomeScreen(userId).then((hasSeen) => {
+    void fetchAuthBootstrap().then((bootstrap) => {
       if (!isActive) {
         return;
       }
 
-      if (hasSeen) {
+      if (!bootstrap.terms.is_accepted) {
+        router.replace('/terms');
+        return;
+      }
+
+      if (bootstrap.onboarding.is_completed) {
         router.replace('/main');
         return;
       }
 
       setIsReady(true);
+    }).catch(() => {
+      if (isActive) {
+        router.replace('/login');
+      }
     });
 
     return () => {
@@ -61,7 +70,6 @@ export default function WelcomeScreen() {
     }
 
     setIsStarting(true);
-    await markWelcomeScreenCompleted(userId);
     router.replace('/onboarding/step1' as Href);
   };
 

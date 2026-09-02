@@ -12,10 +12,8 @@ import { BottomNavigationBar } from '@/components/bottom-navigation-bar';
 import { TutorialOverlayHost, TutorialProvider } from '@/components/tutorial-provider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LanguageProvider } from '@/hooks/use-language';
-import { saveAuthTokens } from '@/lib/auth-api';
-import { getAuthItem, getPersistentAuthItem } from '@/lib/auth-storage';
-import { hasAcceptedTerms } from '@/lib/terms-storage';
-import { hasSeenWelcomeScreen } from '@/lib/tutorial-storage';
+import { resolveAuthenticatedRoute, saveAuthTokens } from '@/lib/auth-api';
+import { subscribeToMissionNotificationResponses } from '@/lib/mission-notification';
 function getKakaoInviteToken(url: string) {
   try {
     const parsedUrl = new URL(url);
@@ -51,6 +49,30 @@ function openKakaoInvite(url: string | null) {
   });
 }
 
+function useNotificationObserver() {
+  useEffect(() => {
+    let isActive = true;
+    let unsubscribe: () => void = () => undefined;
+
+    void subscribeToMissionNotificationResponses((url) => {
+      if (isActive) {
+        router.push(url as never);
+      }
+    }).then((cleanup) => {
+      if (isActive) {
+        unsubscribe = cleanup;
+      } else {
+        cleanup();
+      }
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, []);
+}
+
 async function openKakaoAuth(url: string | null) {
   // Web callbacks are handled by the splash route so they cannot race with
   // its session-restore redirect. Native deep-link handling remains intact.
@@ -72,15 +94,7 @@ async function openKakaoAuth(url: string | null) {
       user_id: userId ?? undefined,
     });
 
-    const currentUserId = getAuthItem('user_id') ?? await getPersistentAuthItem('user_id');
-
-    if (currentUserId && !(await hasAcceptedTerms(currentUserId))) {
-      router.replace('/terms');
-      return;
-    }
-
-    const shouldShowWelcome = currentUserId ? !(await hasSeenWelcomeScreen(currentUserId)) : false;
-    router.replace(shouldShowWelcome ? '/welcome' : '/main');
+    router.replace(await resolveAuthenticatedRoute());
   } catch {
     // Ignore unrelated deep links and malformed OAuth callback URLs.
   }
@@ -88,6 +102,7 @@ async function openKakaoAuth(url: string | null) {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  useNotificationObserver();
   const [iconFontLoaded, iconFontError] = useFonts({
     'material-community': MaterialCommunityIcons.font['material-community'],
   });

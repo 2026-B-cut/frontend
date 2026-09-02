@@ -7,6 +7,16 @@
 export { API_BASE_URL } from '@/lib/api-config';
 
 export { fetchWithAuth } from './auth/auth-client';
+export { AuthApiError } from './auth/auth-client';
+export {
+  completeOnboarding,
+  fetchAuthBootstrap,
+  fetchLegalDocuments,
+  getAuthenticatedRoute,
+  getCachedLegalDocument,
+  resolveAuthenticatedRoute,
+  saveTermsConsent,
+} from './auth/auth-bootstrap-api';
 export {
   confirmPasswordReset,
   deleteCurrentAccount,
@@ -26,3 +36,11 @@ export {
   uploadProfileImage,
 } from './auth/auth-profile-api';
 export type { AuthTokens, AuthUser } from './auth/auth-types';
+export type {
+  AuthBootstrap,
+  LegalDocument,
+  LegalDocumentType,
+  LegalDocumentsResponse,
+  OnboardingCompleteResponse,
+  TermsConsentResponse,
+} from './auth/auth-bootstrap-api';

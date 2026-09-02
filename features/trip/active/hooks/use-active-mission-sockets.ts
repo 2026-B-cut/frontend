@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { useEffect, type MutableRefObject } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
+import { AppState } from 'react-native';
 
 import {
   connectMissionSessionSocket,
@@ -9,6 +10,7 @@ import {
   type MissionSession,
 } from '@/lib/mission-session-api';
 import type { TripSchedule } from '@/lib/trip-schedule-api';
+import { showMissionNotification } from '@/lib/mission-notification';
 import { hasLeftMissionParticipation } from '../active-data';
 
 type RememberFeedSession = (session: MissionSession, fallbackScheduleMissionId?: string) => void;
@@ -39,6 +41,16 @@ export function useActiveMissionSockets({
   suppressedLeaderSessionIdsRef,
   suppressedParticipationSessionId,
 }: UseActiveMissionSocketsOptions) {
+  const appStateRef = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     if (!activeBlockingSession?.id || !isFocused) {
       return;
@@ -66,7 +78,7 @@ export function useActiveMissionSockets({
       return;
     }
 
-    const openParticipation = (nextSession: MissionSession) => {
+    const openParticipation = (nextSession: MissionSession, shouldNotifyWhenBackground = false) => {
       const myMember = nextSession.members.find((member) => member.userId === currentUserId);
 
       if (
@@ -81,9 +93,24 @@ export function useActiveMissionSockets({
         return;
       }
 
+      const scheduleMission = schedule?.missions.find((mission) => mission.scheduleMissionId === nextSession.scheduleMissionId);
+
+      if (appStateRef.current !== 'active') {
+        if (shouldNotifyWhenBackground) {
+          openingParticipationSessionIdRef.current = nextSession.id;
+          rememberFeedSession(nextSession);
+          void showMissionNotification({
+            missionTitle: nextSession.missionTitle,
+            scheduleId,
+            scheduleMissionId: nextSession.scheduleMissionId,
+            sessionId: nextSession.id,
+          });
+        }
+        return;
+      }
+
       openingParticipationSessionIdRef.current = nextSession.id;
       rememberFeedSession(nextSession);
-      const scheduleMission = schedule?.missions.find((mission) => mission.scheduleMissionId === nextSession.scheduleMissionId);
       router.replace({
         pathname: '/trip/participation',
         params: {
@@ -112,7 +139,7 @@ export function useActiveMissionSockets({
         }
 
         if (nextSession && (type === 'mission_session_created' || type === 'schedule_mission_snapshot')) {
-          openParticipation(nextSession);
+          openParticipation(nextSession, type === 'mission_session_created');
         }
       },
     });

@@ -1,12 +1,15 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { AuthApiError, completeOnboarding, fetchAuthBootstrap } from '@/lib/auth-api';
+import { getAuthItem } from '@/lib/auth-storage';
+import { getRequestErrorMessage } from '@/lib/auth-error';
 
 const onboardingSteps = [
   {
@@ -49,11 +52,52 @@ const onboardingSteps = [
 export default function MissionCategoryScreen() {
   const { bottomSafeInset, height, topSafeInset, width } = useResponsiveLayout();
   const [stepIndex, setStepIndex] = useState(0);
+  const [onboardingVersion, setOnboardingVersion] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const isHandlingStep = useRef(false);
   const currentStep = onboardingSteps[stepIndex];
   const isLastStep = stepIndex === onboardingSteps.length - 1;
   const imageWidth = Math.min(Math.max(width * 0.46, 178), 210);
   const imageHeight = imageWidth * (340 / 168);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!getAuthItem('access_token')) {
+      router.replace('/login');
+      return () => {
+        isActive = false;
+      };
+    }
+
+    void fetchAuthBootstrap()
+      .then((bootstrap) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (!bootstrap.terms.is_accepted) {
+          router.replace('/terms');
+          return;
+        }
+
+        if (bootstrap.onboarding.is_completed) {
+          router.replace('/main');
+          return;
+        }
+
+        setOnboardingVersion(bootstrap.onboarding.required_version);
+      })
+      .catch(() => {
+        if (isActive) {
+          router.replace('/login');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     // The onboarding SVGs contain large embedded PNGs. Load them in parallel
@@ -69,7 +113,7 @@ export default function MissionCategoryScreen() {
     isHandlingStep.current = false;
   }, [stepIndex]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isHandlingStep.current) {
       return;
     }
@@ -77,12 +121,49 @@ export default function MissionCategoryScreen() {
     isHandlingStep.current = true;
 
     if (isLastStep) {
-      router.replace('/main');
+      if (onboardingVersion === null) {
+        isHandlingStep.current = false;
+        return;
+      }
+
+      try {
+        await completeOnboarding(onboardingVersion);
+        router.replace('/main');
+      } catch (error) {
+        if (error instanceof AuthApiError && error.code === 'ONBOARDING_VERSION_MISMATCH') {
+          try {
+            const latest = await fetchAuthBootstrap();
+
+            if (latest.onboarding.is_completed) {
+              router.replace('/main');
+              return;
+            }
+
+            setOnboardingVersion(latest.onboarding.required_version);
+            setStepIndex(0);
+            setErrorMessage('온보딩이 업데이트되어 처음부터 다시 진행해 주세요.');
+          } catch (refreshError) {
+            setErrorMessage(getRequestErrorMessage(refreshError));
+          }
+        } else {
+          setErrorMessage(getRequestErrorMessage(error));
+        }
+      } finally {
+        isHandlingStep.current = false;
+      }
       return;
     }
 
     setStepIndex((currentIndex) => currentIndex + 1);
   };
+
+  if (onboardingVersion === null) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator color="#63B5CD" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -131,6 +212,7 @@ export default function MissionCategoryScreen() {
         <ScalePressable accessibilityRole="button" onPress={handleNext} pressGuard={false} style={styles.button}>
           <Text style={styles.buttonText}>{isLastStep ? '여행 시작하기' : '다음'}</Text>
         </ScalePressable>
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
       </View>
     </View>
   );
@@ -140,6 +222,10 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     flex: 1,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -202,5 +288,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
+  },
+  errorText: {
+    color: '#D26A6A',
+    fontSize: 13,
+    marginTop: 12,
+    textAlign: 'center',
   },
 });
