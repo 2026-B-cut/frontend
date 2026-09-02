@@ -1,5 +1,5 @@
 import { Text as NativeText, TextInput as NativeTextInput, type TextInputProps, type TextProps } from 'react-native';
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 import { translateText } from '@/lib/language';
 import { useLanguage } from '@/hooks/use-language';
@@ -26,8 +26,11 @@ export function LocalizedText({ children, ...props }: TextProps) {
   return <NativeText key={language} {...props}>{localizeChild(children)}</NativeText>;
 }
 
-export function LocalizedTextInput({ placeholder, ...props }: TextInputProps) {
+export const LocalizedTextInput = forwardRef<NativeTextInput, TextInputProps>(function LocalizedTextInput(
+  { placeholder, ...props },
+  ref,
+) {
   const { language } = useLanguage();
 
-  return <NativeTextInput key={language} {...props} placeholder={placeholder ? translateText(placeholder) : placeholder} />;
-}
+  return <NativeTextInput key={language} ref={ref} {...props} placeholder={placeholder ? translateText(placeholder) : placeholder} />;
+});
