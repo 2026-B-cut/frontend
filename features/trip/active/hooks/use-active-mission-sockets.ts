@@ -11,7 +11,6 @@ import {
 } from '@/lib/mission-session-api';
 import type { TripSchedule } from '@/lib/trip-schedule-api';
 import { showMissionNotification } from '@/lib/mission-notification';
-import { ensureMissionLocation } from '@/lib/mission-location';
 import { hasLeftMissionParticipation } from '../active-data';
 
 type RememberFeedSession = (session: MissionSession, fallbackScheduleMissionId?: string) => void;
@@ -43,7 +42,6 @@ export function useActiveMissionSockets({
   suppressedParticipationSessionId,
 }: UseActiveMissionSocketsOptions) {
   const appStateRef = useRef(AppState.currentState);
-  const participationLocationCheckRef = useRef<string | null>(null);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -111,40 +109,23 @@ export function useActiveMissionSockets({
         return;
       }
 
-      if (participationLocationCheckRef.current === nextSession.id) {
+      if (openingParticipationSessionIdRef.current === nextSession.id) {
         return;
       }
 
-      participationLocationCheckRef.current = nextSession.id;
-      void ensureMissionLocation(
-        nextSession.verificationType ?? scheduleMission?.verificationType,
-        nextSession.locations ?? scheduleMission?.locations,
-      )
-        .then(() => {
-          if (openingParticipationSessionIdRef.current === nextSession.id) {
-            return;
-          }
-
-          openingParticipationSessionIdRef.current = nextSession.id;
-          rememberFeedSession(nextSession);
-          router.replace({
-            pathname: '/trip/participation',
-            params: {
-              scheduleId,
-              scheduleMissionId: nextSession.scheduleMissionId,
-              sessionId: nextSession.id,
-              ...(nextSession.verificationType || scheduleMission?.verificationType
-                ? { verificationType: nextSession.verificationType ?? scheduleMission?.verificationType ?? '' }
-                : {}),
-            },
-          });
-        })
-        .catch(() => undefined)
-        .finally(() => {
-          if (participationLocationCheckRef.current === nextSession.id) {
-            participationLocationCheckRef.current = null;
-          }
-        });
+      openingParticipationSessionIdRef.current = nextSession.id;
+      rememberFeedSession(nextSession);
+      router.replace({
+        pathname: '/trip/participation',
+        params: {
+          scheduleId,
+          scheduleMissionId: nextSession.scheduleMissionId,
+          sessionId: nextSession.id,
+          ...(nextSession.verificationType || scheduleMission?.verificationType
+            ? { verificationType: nextSession.verificationType ?? scheduleMission?.verificationType ?? '' }
+            : {}),
+        },
+      });
     };
 
     const socket = connectScheduleMissionSessionSocket(scheduleId, {

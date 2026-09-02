@@ -160,10 +160,6 @@ export function useActiveMissionActions({
     ) {
       setIsSessionBusy(true);
       try {
-        if (!(await canEnterMission(mission, existingSession))) {
-          return;
-        }
-
         onMessage('');
         setMissionListVisible(false);
         router.push({

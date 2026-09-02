@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler } from 'react-native';
 
 import { MissionCaptureCameraView } from '@/features/trip/capture/components/mission-capture-camera-view';
@@ -13,7 +13,6 @@ import { useMissionCaptureUpload } from '@/features/trip/capture/hooks/use-missi
 import { getParamValue, getRemainingMs } from '@/features/trip/trip-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { getAuthItem } from '@/lib/auth-storage';
-import { isWithinMissionLocations } from '@/lib/mission-location';
 import { sanitizeMissionPhoto } from '@/lib/mission-photo';
 import type { MissionSession } from '@/lib/mission-session-api';
 import type { TripScheduleMission } from '@/lib/trip-schedule-api';
@@ -32,8 +31,6 @@ export default function MissionCaptureScreen() {
   const [mission, setMission] = useState<TripScheduleMission | null>(null);
   const [isMissionLoading, setIsMissionLoading] = useState(false);
   const [missionError, setMissionError] = useState('');
-  const [isLocationChecking, setIsLocationChecking] = useState(false);
-  const [isLocationVerified, setIsLocationVerified] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [now, setNow] = useState(() => Date.now());
 
@@ -118,54 +115,6 @@ export default function MissionCaptureScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const missionLocations = useMemo(() => session?.locations ?? mission?.locations ?? [], [mission?.locations, session?.locations]);
-  const requiresLocalLocation = (session?.verificationType ?? mission?.verificationType)?.toUpperCase() === 'GPS_PHOTO';
-  const hasMissionData = Boolean(session || mission);
-  const canCaptureByLocation = !requiresLocalLocation || isLocationVerified;
-
-  const checkMissionLocation = useCallback(async () => {
-    if (!requiresLocalLocation) {
-      setIsLocationVerified(true);
-      setLocationError('');
-      return;
-    }
-
-    if (missionLocations.length === 0) {
-      setIsLocationVerified(false);
-      setLocationError('미션 장소 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.');
-      return;
-    }
-
-    setIsLocationChecking(true);
-    try {
-      const isInside = await isWithinMissionLocations(missionLocations);
-      setIsLocationVerified(isInside);
-      setLocationError(isInside ? '' : '미션 장소 근처에서만 사진을 촬영할 수 있어요.');
-    } catch (error) {
-      setIsLocationVerified(false);
-      setLocationError(error instanceof Error ? error.message : '현재 위치를 확인하지 못했어요. 다시 시도해 주세요.');
-    } finally {
-      setIsLocationChecking(false);
-    }
-  }, [missionLocations, requiresLocalLocation]);
-
-  useEffect(() => {
-    if (!hasMissionData) {
-      return;
-    }
-
-    void checkMissionLocation();
-    if (!requiresLocalLocation) {
-      return;
-    }
-
-    const timer = setInterval(() => {
-      void checkMissionLocation();
-    }, 10000);
-
-    return () => clearInterval(timer);
-  }, [checkMissionLocation, hasMissionData, requiresLocalLocation]);
-
   useEffect(() => {
     if (!isNonParticipant || isTransitioningToResult || hasNavigatedAway.current) {
       return;
@@ -192,7 +141,7 @@ export default function MissionCaptureScreen() {
     setJudgeStatus(null);
     setSubmittedSubmissionId(null);
   }, [setIsMissionComplete, setJudgeReason, setJudgeStatus, setSubmittedSubmissionId]);
-  const camera = useMissionCaptureCamera({ bottomSafeInset, height, isLocationChecking, isLocationVerified: canCaptureByLocation, isShootingExpired, onPhotoCaptured: handlePhotoCaptured });
+  const camera = useMissionCaptureCamera({ bottomSafeInset, height, isShootingExpired, onPhotoCaptured: handlePhotoCaptured });
 
   if (!camera.permission) {
     return <MissionCapturePermissionState bottomSafeInset={bottomSafeInset} onClose={goBackToActive} topSafeInset={topSafeInset} variant="loading" />;
@@ -240,8 +189,6 @@ export default function MissionCaptureScreen() {
       facing={camera.facing}
       flash={camera.flash}
       handleCapture={camera.handleCapture}
-      isLocationChecking={isLocationChecking}
-      isLocationVerified={canCaptureByLocation}
       isCapturing={camera.isCapturing}
       isMissionLoading={isMissionLoading}
       isShootingExpired={isShootingExpired}

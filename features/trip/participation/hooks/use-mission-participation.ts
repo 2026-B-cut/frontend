@@ -2,7 +2,6 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { chooseMissionParticipation, cancelMissionSession, connectMissionSessionSocket, connectScheduleMissionSessionSocket, getActiveMissionSession, getMissionSession, getPassedMissionSubmissions, isMissionSessionNotFoundError, startMissionSession, type MissionSession } from '@/lib/mission-session-api';
-import { ensureMissionLocation } from '@/lib/mission-location';
 import { getParticipationErrorMessage, hasLeftParticipation, isParticipating } from '../mission-participation-data';
 
 type UseMissionParticipationOptions = {
@@ -17,7 +16,6 @@ type UseMissionParticipationOptions = {
 export function useMissionParticipation({
   currentUserId,
   isFocused,
-  routeVerificationType,
   scheduleId,
   sessionId,
 }: UseMissionParticipationOptions) {
@@ -28,7 +26,6 @@ export function useMissionParticipation({
   const hasNavigated = useRef(false);
   const leaderParticipationRequested = useRef(false);
   const soloStartRequested = useRef(false);
-  const locationCheckInFlight = useRef(false);
 
   const myMember = useMemo(
     () => session?.members.find((member) => member.userId === currentUserId) ?? null,
@@ -84,34 +81,20 @@ export function useMissionParticipation({
 
   const navigateToCapture = useCallback((nextSession: MissionSession) => {
     const nextMember = nextSession.members.find((member) => member.userId === currentUserId);
-    if (!scheduleId || !nextSession.id || !nextMember || !isParticipating(nextMember.participationStatus) || hasNavigated.current || locationCheckInFlight.current) {
+    if (!scheduleId || !nextSession.id || !nextMember || !isParticipating(nextMember.participationStatus) || hasNavigated.current) {
       return;
     }
 
-    locationCheckInFlight.current = true;
-    void ensureMissionLocation(nextSession.verificationType ?? routeVerificationType, nextSession.locations)
-      .then(() => {
-        if (hasNavigated.current) {
-          return;
-        }
-
-        hasNavigated.current = true;
-        router.replace({
-          pathname: '/trip/capture',
-          params: {
-            scheduleId,
-            scheduleMissionId: nextSession.scheduleMissionId,
-            sessionId: nextSession.id,
-          },
-        });
-      })
-      .catch((error) => {
-        setMessage(error instanceof Error ? error.message : '미션 장소를 확인하지 못했어요.');
-      })
-      .finally(() => {
-        locationCheckInFlight.current = false;
-      });
-  }, [currentUserId, routeVerificationType, scheduleId]);
+    hasNavigated.current = true;
+    router.replace({
+      pathname: '/trip/capture',
+      params: {
+        scheduleId,
+        scheduleMissionId: nextSession.scheduleMissionId,
+        sessionId: nextSession.id,
+      },
+    });
+  }, [currentUserId, scheduleId]);
 
   const navigateToReview = useCallback((nextSession: MissionSession) => {
     if (!scheduleId || !nextSession.id || hasNavigated.current) {

@@ -43,7 +43,7 @@ export default function ActiveTripScreen() {
   const [message, setMessage] = useState('');
   const requiredScheduleMemberCount = schedule?.participants.length ?? 0;
   const isScheduleCreator = Boolean(schedule?.creatorId && currentUserId && schedule.creatorId === currentUserId);
-  const missionState = useActiveMissionState({ currentUserId, ignoredSessionId: cancelledSessionId, requiredScheduleMemberCount, schedule, scheduleId });
+  const missionState = useActiveMissionState({ currentUserId, requiredScheduleMemberCount, schedule, scheduleId });
   const {
     handleScheduleMissing: resetMissionState,
     handleScheduleSessionCacheLoaded: loadMissionSessionCache,
