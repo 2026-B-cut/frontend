@@ -62,6 +62,7 @@ export default function ProfileScreen() {
         onDeleteAccount={profile.handleDeleteAccount}
         onLogout={profile.handleLogout}
         onOpenNotifications={() => router.push('/main/notifications')}
+        onOpenTerms={() => router.push('/terms-detail')}
         onPasswordReset={() => router.push({ pathname: '/login', params: { mode: 'reset', returnTo: 'profile' } })}
       />
     </ScrollView>

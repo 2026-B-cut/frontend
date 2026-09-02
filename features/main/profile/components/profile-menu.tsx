@@ -19,6 +19,7 @@ type ProfileMenuProps = {
   onDeleteAccount: () => void;
   onLogout: () => void;
   onOpenNotifications: () => void;
+  onOpenTerms: () => void;
   onPasswordReset: () => void;
 };
 
@@ -26,6 +27,7 @@ const menuItems: MenuItem[] = [
   { icon: 'account-circle-outline', label: '카카오 계정' },
   { icon: 'lock-outline', label: '개인정보 / 보안' },
   { icon: 'bell-outline', label: '알림' },
+  { icon: 'help-circle-outline', label: '이용 약관' },
 ];
 
 export function ProfileMenu({
@@ -35,13 +37,26 @@ export function ProfileMenu({
   onDeleteAccount,
   onLogout,
   onOpenNotifications,
+  onOpenTerms,
   onPasswordReset,
 }: ProfileMenuProps) {
   return (
     <View style={[styles.menuSection, { paddingBottom: 30, paddingHorizontal: horizontalPadding }]}>
       <View style={[styles.menuCard, { maxWidth: contentMaxWidth }]}>
         {menuItems.map((item) => (
-          <ScalePressable accessibilityRole="button" disabled={isAccountActionInProgress} key={item.label} onPress={item.label === '알림' ? onOpenNotifications : () => {}} pressedScale={0.98} style={styles.menuRow}>
+          <ScalePressable
+            accessibilityRole="button"
+            disabled={isAccountActionInProgress}
+            key={item.label}
+            onPress={
+              item.label === '알림'
+                ? onOpenNotifications
+                : item.label === '이용 약관'
+                  ? onOpenTerms
+                  : () => {}
+            }
+            pressedScale={0.98}
+            style={styles.menuRow}>
             <View style={styles.menuLeft}>
               <MaterialCommunityIcons color="#10161F" name={item.icon} size={25} />
               <Text style={styles.menuText}>{item.label}</Text>
