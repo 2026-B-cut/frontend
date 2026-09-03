@@ -53,7 +53,7 @@ export function ActiveRouteRecommendation({
         return (
           <View key={group.date} style={styles.dayCard}>
             <View style={styles.dayHeader}>
-              <ScalePressable accessibilityRole="button" accessibilityLabel={`${group.date} ${isExpanded ? '접기' : '펼치기'}`} onPress={() => setExpandedDate((currentDate) => currentDate === group.date ? null : group.date)} pressedScale={0.99} style={styles.dayToggle}>
+              <ScalePressable accessibilityRole="button" accessibilityLabel={`${group.date} ${isExpanded ? '접기' : '펼치기'}`} onPress={() => setExpandedDate((currentDate) => currentDate === group.date ? null : group.date)} pressGuard={false} pressedScale={0.99} style={styles.dayToggle}>
                 <Ionicons color="#56869D" name={isExpanded ? 'chevron-down' : 'chevron-forward'} size={24} />
                 <Text style={styles.dayTitle}>{`${groupsWithMissions.indexOf(group) + 1}일차`}</Text>
                 <Text style={styles.dayDate}>{getMissionDateLabel(group.date)}</Text>

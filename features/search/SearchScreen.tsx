@@ -176,8 +176,7 @@ export default function SearchScreen() {
       });
   };
 
-  const selectSearch = (value: string, nextContentType: TourismContentType = TOURISM_TYPES.ATTRACTION) => {
-    setContentType(nextContentType);
+  const selectSearch = (value: string) => {
     setQuery(value);
     inputRef.current?.focus();
   };

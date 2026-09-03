@@ -1,39 +1,16 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
-import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
+import { TopBar } from '@/components/top-bar';
 import { ActiveRouteRecommendation, type ActiveRouteMissionGroup } from '@/features/trip/active/components/active-route-recommendation';
 import { getScheduleDateOptions, hasSavedRouteRecommendation, saveRouteRecommendationSignature, sortMissionsByVisitOrder } from '@/features/trip/active/active-data';
 import { getParamValue } from '@/features/trip/trip-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { getAuthItem } from '@/lib/auth-storage';
-import { getTripSchedule, recommendMissionOrder, TripScheduleApiError, type TripSchedule } from '@/lib/trip-schedule-api';
+import { getTripSchedule, recommendMissionOrder, type TripSchedule } from '@/lib/trip-schedule-api';
 import { styles } from '@/features/trip/active/route-screen-styles';
-
-function getRouteErrorMessage(error: unknown) {
-  const code = error instanceof TripScheduleApiError ? error.code : undefined;
-
-  if (code === 'MISSION_DATE_OUT_OF_RANGE') {
-    return '일정 기간 밖의 날짜입니다.';
-  }
-
-  if (code === 'SCHEDULE_MISSIONS_CHANGED') {
-    return '일정 미션이 변경됐어요. 최신 일정으로 다시 시도해 주세요.';
-  }
-
-  if (code === 'NO_MISSIONS_FOR_DATE') {
-    return '해당 날짜에 미션이 없습니다.';
-  }
-
-  if (code === 'ROUTE_RECOMMENDATION_UNAVAILABLE' || code === 'OPENAI_NOT_CONFIGURED') {
-    return '동선 추천에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-  }
-
-  return error instanceof Error ? error.message : '동선 추천에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-}
 
 function getMissionDateGroups(schedule: TripSchedule | null): ActiveRouteMissionGroup[] {
   if (!schedule) {
@@ -58,12 +35,11 @@ export default function RouteRecommendationScreen() {
   const params = useLocalSearchParams<{ scheduleId?: string | string[] }>();
   const scheduleId = getParamValue(params.scheduleId);
   const currentUserId = getAuthItem('user_id');
-  const { bottomSafeInset, horizontalPadding, topSafeInset } = useResponsiveLayout();
+  const { bottomSafeInset, horizontalPadding, topInset } = useResponsiveLayout();
   const [schedule, setSchedule] = useState<TripSchedule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [recommendingDate, setRecommendingDate] = useState<string | null>(null);
-  const [recommendationMessage, setRecommendationMessage] = useState('');
   const [recommendedDates, setRecommendedDates] = useState<string[]>([]);
   const missionDateGroups = useMemo(() => getMissionDateGroups(schedule), [schedule]);
   const isScheduleCreator = Boolean(schedule?.creatorId && currentUserId && schedule.creatorId === currentUserId);
@@ -117,7 +93,6 @@ export default function RouteRecommendationScreen() {
 
     try {
       setRecommendingDate(plannedDate);
-      setRecommendationMessage('');
       const result = await recommendMissionOrder(schedule.scheduleId, plannedDate);
       saveRouteRecommendationSignature(schedule.scheduleId, result.plannedDate, result.missions);
       setRecommendedDates((currentDates) => currentDates.includes(result.plannedDate) ? currentDates : [...currentDates, result.plannedDate]);
@@ -129,9 +104,8 @@ export default function RouteRecommendationScreen() {
           ...result.missions,
         ],
       } : currentSchedule);
-      setRecommendationMessage(`${result.plannedDate} 경로를 추천했어요.`);
-    } catch (error) {
-      setRecommendationMessage(getRouteErrorMessage(error));
+    } catch {
+      // 경로 추천 실패 시 별도 결과 메시지를 표시하지 않습니다.
     } finally {
       setRecommendingDate(null);
     }
@@ -140,15 +114,9 @@ export default function RouteRecommendationScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomSafeInset + 32, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset + 12 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomSafeInset + 32, paddingHorizontal: horizontalPadding, paddingTop: topInset }]}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Pressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} style={styles.headerBackButton}>
-            <Ionicons color="#10161F" name="chevron-back" size={30} />
-          </Pressable>
-          <Text style={styles.headerTitle}>날짜별 경로</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <TopBar title="날짜별 경로" />
         <View style={styles.intro}>
           <Text numberOfLines={1} style={styles.tripName}>{schedule?.roomName ?? '우정여행🐷🐷'}</Text>
           <Text style={styles.introDescription}>미션 순서를 추천받아 보세요</Text>
@@ -165,7 +133,6 @@ export default function RouteRecommendationScreen() {
         ) : schedule ? (
           <>
             {!isScheduleCreator ? <Text style={styles.permissionHint}>일정 생성자만 경로를 추천할 수 있어요.</Text> : null}
-            {recommendationMessage ? <Text style={styles.resultMessage}>{recommendationMessage}</Text> : null}
             <ActiveRouteRecommendation
               canRecommendRoute={isScheduleCreator}
               missionDateGroups={missionDateGroups}
