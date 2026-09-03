@@ -43,12 +43,12 @@ function getPetRows(pet: TourismPetInformation) {
   ].filter((row): row is [string, string] => Boolean(row[1]?.trim()));
 }
 
-function MissionRecommendationCard({ mission }: { mission: TourismMissionRecommendation }) {
+function MissionRecommendationCard({ mission, onPress }: { mission: TourismMissionRecommendation; onPress: (mission: TourismMissionRecommendation) => void }) {
   const imageUrl = getImageUrl(mission.target_photo_url);
   const distance = formatDistance(mission.distance_m);
 
   return (
-    <View style={styles.missionRecommendationCard}>
+    <Pressable accessibilityRole="button" onPress={() => onPress(mission)} style={styles.missionRecommendationCard}>
       <View style={styles.missionRecommendationHeader}>
         <View style={styles.missionRecommendationHeading}>
           <Text style={styles.missionRecommendationTitle}>{mission.title}</Text>
@@ -69,11 +69,11 @@ function MissionRecommendationCard({ mission }: { mission: TourismMissionRecomme
           ))}
         </View>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
-function PlaceDetailContent({ detail }: { detail: TourismPlaceDetail }) {
+function PlaceDetailContent({ detail, onMissionPress }: { detail: TourismPlaceDetail; onMissionPress: (mission: TourismMissionRecommendation) => void }) {
   const imageUrl = getImageUrl(detail.image_url || detail.thumbnail_url);
   const petRows = detail.pet ? getPetRows(detail.pet) : [];
 
@@ -112,7 +112,7 @@ function PlaceDetailContent({ detail }: { detail: TourismPlaceDetail }) {
           <Text style={styles.detailSectionTitle}>이 장소와 어울리는 미션</Text>
           <View style={styles.missionRecommendationList}>
             {detail.recommended_missions.map((mission) => (
-              <MissionRecommendationCard key={mission.mission_id} mission={mission} />
+              <MissionRecommendationCard key={mission.mission_id} mission={mission} onPress={onMissionPress} />
             ))}
           </View>
         </View>
@@ -127,6 +127,16 @@ export default function TourismPlaceDetailScreen() {
   const contentId = Array.isArray(contentIdParam) ? contentIdParam[0] : contentIdParam;
   const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const openMissionDetail = (mission: TourismMissionRecommendation) => {
+    router.push({
+      pathname: '/mission/detail',
+      params: {
+        missionCode: mission.code,
+        theme: mission.theme,
+      },
+    } as never);
+  };
 
   useEffect(() => {
     if (!contentId) {
@@ -162,7 +172,7 @@ export default function TourismPlaceDetailScreen() {
       </View>
 
       {detail ? (
-        <PlaceDetailContent detail={detail} />
+        <PlaceDetailContent detail={detail} onMissionPress={openMissionDetail} />
       ) : errorMessage ? (
         <View style={styles.detailMessageState}>
           <Text style={styles.searchMessage}>{errorMessage}</Text>
