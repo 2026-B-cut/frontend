@@ -1,6 +1,18 @@
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
 import { getLanguageHeaders } from '@/lib/language';
 
+export const TOURISM_TYPES = {
+  ATTRACTION: '12',
+  CULTURE: '14',
+  FESTIVAL: '15',
+  COURSE: '25',
+  LEISURE: '28',
+  ACCOMMODATION: '32',
+  SHOPPING: '38',
+} as const;
+
+export type TourismContentType = (typeof TOURISM_TYPES)[keyof typeof TOURISM_TYPES];
+
 export type TourismPlaceSearchItem = {
   content_id: string;
   content_type_id?: string | null;
@@ -23,6 +35,39 @@ export type TourismSearchResponse = {
   page_size: number;
   total_count: number;
   items: TourismPlaceSearchItem[];
+};
+
+export type TourismPetInformation = {
+  accompaniment_type?: string | null;
+  allowed_companions?: string | null;
+  required_items?: string | null;
+  precautions?: string | null;
+  accident_risk_notes?: string | null;
+  related_facilities?: string | null;
+  provided_items?: string | null;
+  purchasable_items?: string | null;
+  rental_items?: string | null;
+};
+
+export type TourismMissionRecommendation = {
+  mission_id: number;
+  code: string;
+  title: string;
+  description: string;
+  theme: 'MOUNTAIN' | 'SEA' | 'CITY';
+  type: 'BASIC' | 'RARE' | 'SIDE';
+  place_label?: string | null;
+  address?: string | null;
+  target_photo_url?: string | null;
+  distance_m?: number | null;
+  match_reasons: string[];
+};
+
+export type TourismPlaceDetail = TourismPlaceSearchItem & {
+  homepage_url?: string | null;
+  overview?: string | null;
+  pet?: TourismPetInformation | null;
+  recommended_missions: TourismMissionRecommendation[];
 };
 
 export class TourismSearchApiError extends Error {
@@ -52,7 +97,7 @@ function getErrorMessage(data: unknown) {
   return '관광지 검색에 실패했어요.';
 }
 
-async function readTourismResponse(response: Response) {
+async function readTourismResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
   let data: unknown = {};
 
@@ -66,7 +111,7 @@ async function readTourismResponse(response: Response) {
     throw new TourismSearchApiError(getErrorMessage(data), response.status);
   }
 
-  return data as TourismSearchResponse;
+  return data as T;
 }
 
 export function normalizeTourismImageUrl(imageUrl: string | null | undefined) {
@@ -82,6 +127,7 @@ export async function searchTourismPlaces(
   page = 1,
   pageSize = 20,
   signal?: AbortSignal,
+  contentType: TourismContentType = TOURISM_TYPES.ATTRACTION,
 ) {
   const trimmedKeyword = keyword.trim();
 
@@ -95,6 +141,7 @@ export async function searchTourismPlaces(
 
   const params = new URLSearchParams({
     keyword: trimmedKeyword,
+    content_type: contentType,
     page: String(page),
     page_size: String(Math.min(Math.max(pageSize, 1), 50)),
   });
@@ -103,5 +150,14 @@ export async function searchTourismPlaces(
     signal,
   });
 
-  return readTourismResponse(response);
+  return readTourismResponse<TourismSearchResponse>(response);
+}
+
+export async function getTourismPlaceDetail(contentId: string, signal?: AbortSignal) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/tourism/places/${encodeURIComponent(contentId)}`, {
+    headers: getLanguageHeaders(),
+    signal,
+  });
+
+  return readTourismResponse<TourismPlaceDetail>(response);
 }

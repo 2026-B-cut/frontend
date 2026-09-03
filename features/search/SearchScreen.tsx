@@ -1,9 +1,17 @@
 // 관광지 검색 화면의 검색 전, 입력 중, 검색 후 상태를 조립합니다.
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/localized-text';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { TourismSearchApiError, normalizeTourismImageUrl, searchTourismPlaces, type TourismPlaceSearchItem } from '@/lib/tourism-api';
+import {
+  TOURISM_TYPES,
+  TourismSearchApiError,
+  normalizeTourismImageUrl,
+  searchTourismPlaces,
+  type TourismContentType,
+  type TourismPlaceSearchItem,
+} from '@/lib/tourism-api';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, FlatList, Pressable, TextInput as NativeTextInput, View } from 'react-native';
 
@@ -11,6 +19,15 @@ import { useSearch } from './hooks/use-search';
 import { styles } from './styles';
 
 const recommendedSearches = ['부산 맛집 투어', '커플 여행코스', '가족과 함께', '아이들이 좋아하는', '바다 근처'];
+const tourismTypeItems: Array<{ label: string; value: TourismContentType }> = [
+  { label: '관광지', value: TOURISM_TYPES.ATTRACTION },
+  { label: '문화시설', value: TOURISM_TYPES.CULTURE },
+  { label: '축제·행사', value: TOURISM_TYPES.FESTIVAL },
+  { label: '여행코스', value: TOURISM_TYPES.COURSE },
+  { label: '레포츠', value: TOURISM_TYPES.LEISURE },
+  { label: '숙박', value: TOURISM_TYPES.ACCOMMODATION },
+  { label: '쇼핑', value: TOURISM_TYPES.SHOPPING },
+];
 
 function getLocation(place: TourismPlaceSearchItem) {
   return place.address || place.detail_address || '부산';
@@ -24,11 +41,11 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === 'AbortError';
 }
 
-function TourismResultCard({ place }: { place: TourismPlaceSearchItem }) {
+function TourismResultCard({ place, onPress }: { place: TourismPlaceSearchItem; onPress: (place: TourismPlaceSearchItem) => void }) {
   const imageUrl = getImageUrl(place);
 
   return (
-    <View style={styles.resultCard}>
+    <Pressable onPress={() => onPress(place)} style={styles.resultCard}>
       <View style={styles.resultHeader}>
         <View style={styles.resultHeading}>
           <Text style={styles.resultTitle}>{place.title}</Text>
@@ -52,7 +69,7 @@ function TourismResultCard({ place }: { place: TourismPlaceSearchItem }) {
         </View>
         <Feather color="#4C88A4" name="arrow-right" size={18} />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -67,6 +84,7 @@ export default function SearchScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [contentType, setContentType] = useState<TourismContentType>(TOURISM_TYPES.ATTRACTION);
   const {
     query,
     recentSearches,
@@ -103,7 +121,7 @@ export default function SearchScreen() {
     setIsSearching(true);
 
     const timeoutId = setTimeout(() => {
-      void searchTourismPlaces(keyword, 1, 20, controller.signal)
+      void searchTourismPlaces(keyword, 1, 20, controller.signal, contentType)
         .then((response) => {
           if (requestIdRef.current !== requestId) {
             return;
@@ -134,7 +152,7 @@ export default function SearchScreen() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [addRecentSearch, query]);
+  }, [addRecentSearch, contentType, query]);
 
   const loadMoreResults = () => {
     if (!hasSearched || isSearching || isLoadingMore || !hasMoreResults || !query.trim()) {
@@ -144,7 +162,7 @@ export default function SearchScreen() {
     const nextPage = page + 1;
     setIsLoadingMore(true);
 
-    void searchTourismPlaces(query, nextPage, 20)
+    void searchTourismPlaces(query, nextPage, 20, undefined, contentType)
       .then((response) => {
         setResults((current) => [...current, ...response.items]);
         setTotalCount(response.total_count);
@@ -158,9 +176,17 @@ export default function SearchScreen() {
       });
   };
 
-  const selectSearch = (value: string) => {
+  const selectSearch = (value: string, nextContentType: TourismContentType = TOURISM_TYPES.ATTRACTION) => {
+    setContentType(nextContentType);
     setQuery(value);
     inputRef.current?.focus();
+  };
+
+  const openPlaceDetail = (place: TourismPlaceSearchItem) => {
+    router.push({
+      pathname: '/search-detail',
+      params: { contentId: place.content_id },
+    } as never);
   };
 
   const showResults = hasQuery && hasSearched && !isSearching;
@@ -189,6 +215,22 @@ export default function SearchScreen() {
         ) : null}
       </View>
 
+      <View style={styles.typeSelector}>
+        {tourismTypeItems.map((item) => {
+          const isSelected = item.value === contentType;
+
+          return (
+            <Pressable
+              accessibilityState={{ selected: isSelected }}
+              key={item.value}
+              onPress={() => setContentType(item.value)}
+              style={[styles.typeChip, isSelected && styles.typeChipSelected]}>
+              <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>{item.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {showResults ? (
         <FlatList
           contentContainerStyle={styles.resultsContent}
@@ -198,7 +240,7 @@ export default function SearchScreen() {
           ListFooterComponent={isLoadingMore ? <ActivityIndicator color="#74B1C9" style={styles.loadingMore} /> : null}
           onEndReached={loadMoreResults}
           onEndReachedThreshold={0.6}
-          renderItem={({ item }) => <TourismResultCard place={item} />}
+          renderItem={({ item }) => <TourismResultCard onPress={openPlaceDetail} place={item} />}
           showsVerticalScrollIndicator={false}
         />
       ) : hasQuery && isSearching ? (
