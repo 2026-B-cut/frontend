@@ -14,7 +14,7 @@ import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { resolveAuthenticatedRoute } from '@/lib/auth-api';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ mode?: string; returnTo?: string; showTerms?: string }>();
+  const params = useLocalSearchParams<{ inviteToken?: string; mode?: string; returnTo?: string; showTerms?: string }>();
   const { bottomActionInset, bottomSafeInset, horizontalPadding, topInset } = useResponsiveLayout();
 
   const routeAfterAuthentication = async (isNewUser = false) => {
@@ -22,6 +22,11 @@ export default function LoginScreen() {
 
     if (authenticatedRoute === '/terms') {
       router.replace({ pathname: '/login', params: { showTerms: 'true' } });
+      return;
+    }
+
+    if (params.returnTo === 'trip-invite' && params.inviteToken) {
+      router.replace({ pathname: '/trip/invite', params: { inviteToken: params.inviteToken } });
       return;
     }
 

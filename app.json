@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "B-Cut",
+    "name": "찌그까",
     "slug": "B-Cut",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,6 +16,32 @@
       "package": "com.bcut.app",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "kakao632bc2c26ffd61c3edfcdcdcc4169436",
+              "host": "kakaolink"
+            }
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "jjigeukka.kro.kr"
+            }
+          ]
+        }
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",

@@ -1,4 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import {
@@ -12,6 +13,7 @@ import {
   type TripInviteStatus,
 } from '@/features/trip/invite/trip-invite-data';
 import { shareKakaoInvite } from '@/lib/kakao-share';
+import { getAuthItem } from '@/lib/auth-storage';
 import { getCachedTripSchedules, listTripSchedules, type TripSchedule } from '@/lib/trip-schedule-api';
 import { acceptTripInvite, createKakaoInviteTemplateArgs, createTripInvite, declineTripInvite, previewTripInvite, type TripInvite } from '@/lib/trip-invite-api';
 
@@ -149,12 +151,19 @@ export function useTripInvite({ inviteToken, onOpenTripHub, roomName, scheduleId
       return;
     }
 
+    if (!getAuthItem('access_token')) {
+      router.replace({ pathname: '/login', params: { inviteToken, returnTo: 'trip-invite' } });
+      return;
+    }
+
     try {
       setStatus('accepting');
       setMessage('');
 
-      const schedules = await listTripSchedules().catch(() => mySchedules);
-      setMySchedules(schedules);
+      // Do not block the accept request on a second schedules fetch. The server
+      // remains the source of truth for conflicts, while the cache handles the
+      // common local conflict check without leaving the button spinning forever.
+      const schedules = mySchedules;
       if (invitePreview && findConflictingSchedule(invitePreview, schedules)) {
         try {
           await declineTripInvite({ inviteToken });

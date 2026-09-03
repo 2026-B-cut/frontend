@@ -17,18 +17,37 @@ import { subscribeToMissionNotificationResponses } from '@/lib/mission-notificat
 function getKakaoInviteToken(url: string) {
   try {
     const parsedUrl = new URL(url);
-    const scheme = parsedUrl.protocol.replace(':', '');
-    const isKakaoLink = scheme.startsWith('kakao') && parsedUrl.hostname === 'kakaolink';
+    const queryToken = parsedUrl.searchParams.get('inviteToken') ?? parsedUrl.searchParams.get('invite_token');
 
-    if (!isKakaoLink) {
-      return null;
+    if (queryToken) {
+      return queryToken;
     }
 
-    return parsedUrl.searchParams.get('inviteToken') ?? parsedUrl.searchParams.get('invite_token');
-  } catch {
-    const match = url.match(/[?&](?:inviteToken|invite_token)=([^&]+)/);
+    // Kakao templates may use a path-based HTTPS link such as
+    // /invitations/{token} instead of putting the token in query params.
+    const pathSegments = parsedUrl.pathname.split('/').filter(Boolean);
+    const inviteSegmentIndex = pathSegments.findIndex((segment) => {
+      const normalizedSegment = segment.toLowerCase();
+      return normalizedSegment === 'invite' || normalizedSegment === 'invitations';
+    });
 
-    return match ? decodeURIComponent(match[1]) : null;
+    if (inviteSegmentIndex >= 0 && pathSegments[inviteSegmentIndex + 1]) {
+      return decodeURIComponent(pathSegments[inviteSegmentIndex + 1]);
+    }
+
+    const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#\??/, ''));
+
+    return hashParams.get('inviteToken') ?? hashParams.get('invite_token');
+  } catch {
+    const match = url.match(/[?&#](?:inviteToken|invite_token)=([^&#]+)/);
+
+    if (match) {
+      return decodeURIComponent(match[1]);
+    }
+
+    const pathMatch = url.match(/\/(?:invitations?|trip\/invite)\/([^/?#]+)/i);
+
+    return pathMatch ? decodeURIComponent(pathMatch[1]) : null;
   }
 }
 
