@@ -1,10 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
+import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
-import { TopBar } from '@/components/top-bar';
 import { ActiveRouteRecommendation, type ActiveRouteMissionGroup } from '@/features/trip/active/components/active-route-recommendation';
 import { getScheduleDateOptions, hasSavedRouteRecommendation, saveRouteRecommendationSignature, sortMissionsByVisitOrder } from '@/features/trip/active/active-data';
 import { getParamValue } from '@/features/trip/trip-data';
@@ -142,15 +142,16 @@ export default function RouteRecommendationScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomSafeInset + 32, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset + 12 }]}
         showsVerticalScrollIndicator={false}>
-        <TopBar title="날짜별 경로" />
-        <View style={styles.heroCard}>
-          <View style={styles.heroIcon}>
-            <Ionicons color="#FFFFFF" name="navigate" size={25} />
-          </View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>오늘의 동선을 정리해 보세요</Text>
-            <Text style={styles.heroDescription}>담아둔 미션 장소를 바탕으로 더 자연스러운 방문 순서를 추천해 드릴게요.</Text>
-          </View>
+        <View style={styles.header}>
+          <Pressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} style={styles.headerBackButton}>
+            <Ionicons color="#10161F" name="chevron-back" size={30} />
+          </Pressable>
+          <Text style={styles.headerTitle}>날짜별 경로</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.intro}>
+          <Text numberOfLines={1} style={styles.tripName}>{schedule?.roomName ?? '우정여행🐷🐷'}</Text>
+          <Text style={styles.introDescription}>미션 순서를 추천받아 보세요</Text>
         </View>
         {isLoading ? (
           <View style={styles.stateBox}>

@@ -8,38 +8,42 @@ export const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  heroCard: {
+  header: {
     alignItems: 'center',
-    backgroundColor: '#E8F6F9',
-    borderRadius: 24,
     flexDirection: 'row',
-    gap: 14,
-    marginTop: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
+    height: 48,
+    justifyContent: 'space-between',
   },
-  heroIcon: {
-    alignItems: 'center',
-    backgroundColor: '#409CB7',
-    borderRadius: 18,
-    height: 52,
+  headerBackButton: {
+    alignItems: 'flex-start',
+    height: 48,
     justifyContent: 'center',
-    transform: [{ rotate: '-8deg' }],
-    width: 52,
+    width: 48,
   },
-  heroCopy: {
+  headerTitle: {
+    color: '#10161F',
     flex: 1,
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 28,
+    textAlign: 'center',
   },
-  heroTitle: {
-    color: '#163745',
-    fontSize: 16,
-    fontWeight: '800',
+  headerSpacer: {
+    width: 48,
   },
-  heroDescription: {
-    color: '#5E7D86',
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 5,
+  intro: {
+    marginTop: 28,
+  },
+  tripName: {
+    color: '#10161F',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  introDescription: {
+    color: '#8A9194',
+    fontSize: 15,
+    marginTop: 4,
   },
   permissionHint: {
     color: '#8A9194',
