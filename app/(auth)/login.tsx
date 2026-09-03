@@ -1,5 +1,6 @@
 // 인증 기능 화면들을 조립하고 라우팅하는 진입점입니다.
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect } from 'react';
 
 import { AuthFormLayout } from '@/features/auth/components/auth-form-layout';
 import { AuthHome } from '@/features/auth/components/auth-home';
@@ -13,16 +14,31 @@ import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { resolveAuthenticatedRoute } from '@/lib/auth-api';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string; showTerms?: string }>();
   const { bottomActionInset, bottomSafeInset, horizontalPadding, topInset } = useResponsiveLayout();
 
-  const routeAfterAuthentication = async () => {
-    router.replace(await resolveAuthenticatedRoute());
+  const routeAfterAuthentication = async (isNewUser = false) => {
+    const authenticatedRoute = isNewUser ? '/terms' : await resolveAuthenticatedRoute();
+
+    if (authenticatedRoute === '/terms') {
+      router.replace({ pathname: '/login', params: { showTerms: 'true' } });
+      return;
+    }
+
+    router.replace(authenticatedRoute);
   };
+
+  const shouldShowTerms = params.showTerms === 'true';
+
+  useEffect(() => {
+    if (shouldShowTerms) {
+      router.push('/terms');
+    }
+  }, [shouldShowTerms]);
 
   const auth = useAuthFlow({
     initialMode: params.mode === 'reset' ? 'resetRequest' : 'home',
-    onAuthenticated: () => routeAfterAuthentication(),
+    onAuthenticated: (isNewUser) => routeAfterAuthentication(isNewUser),
   });
 
   if (auth.mode === 'home') {

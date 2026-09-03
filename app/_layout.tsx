@@ -94,7 +94,14 @@ async function openKakaoAuth(url: string | null) {
       user_id: userId ?? undefined,
     });
 
-    router.replace(await resolveAuthenticatedRoute());
+    const authenticatedRoute = await resolveAuthenticatedRoute();
+
+    if (authenticatedRoute === '/terms') {
+      router.replace({ pathname: '/login', params: { showTerms: 'true' } });
+      return;
+    }
+
+    router.replace(authenticatedRoute);
   } catch {
     // Ignore unrelated deep links and malformed OAuth callback URLs.
   }

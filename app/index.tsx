@@ -69,16 +69,27 @@ export default function SplashScreen() {
     const startedAt = Date.now();
     setRestoreError('');
 
-    const routeAfterSplash = async (path: '/login' | '/main' | '/welcome' | '/terms') => {
+    const routeAfterSplash = async (path: '/login' | '/main' | '/welcome' | '/terms', params?: { showTerms?: string }) => {
       await waitForMinimumSplash(startedAt);
 
       if (isActive) {
-        router.replace(path);
+        if (params) {
+          router.replace({ pathname: path, params });
+        } else {
+          router.replace(path);
+        }
       }
     };
 
     const routeAfterAuthentication = async () => {
-      await routeAfterSplash(await resolveAuthenticatedRoute());
+      const authenticatedRoute = await resolveAuthenticatedRoute();
+
+      if (authenticatedRoute === '/terms') {
+        await routeAfterSplash('/login', { showTerms: 'true' });
+        return;
+      }
+
+      await routeAfterSplash(authenticatedRoute);
     };
 
     const restoreSession = async () => {

@@ -115,9 +115,11 @@ export function MissionDeckOverlay({
             <Text style={styles.overlayButtonText}>미션 상세 보기</Text>
           </ScalePressable>
         </View>
-        <ScalePressable accessibilityRole="button" accessibilityLabel="닫기" onPress={onClose} style={styles.overlayButton}>
-          <Text style={styles.overlayButtonText}>닫기</Text>
-        </ScalePressable>
+        <View style={styles.overlayButtonTarget}>
+          <ScalePressable accessibilityRole="button" accessibilityLabel="닫기" onPress={onClose} style={styles.overlayButton}>
+            <Text style={styles.overlayButtonText}>닫기</Text>
+          </ScalePressable>
+        </View>
       </View>
     </View>
   );
