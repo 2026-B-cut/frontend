@@ -11,9 +11,9 @@ export function confirmAction(title: string, message: string, onConfirm: () => v
     return;
   }
 
-  Alert.alert(title, message, [
-    { text: '취소', style: 'cancel' },
-    { text: '확인', style: 'destructive', onPress: onConfirm },
+  Alert.alert(translateText(title), translateText(message), [
+    { text: translateText('취소'), style: 'cancel' },
+    { text: translateText('확인'), style: 'destructive', onPress: onConfirm },
   ]);
 }
 
@@ -25,5 +25,5 @@ export function showActionError(title: string, message: string) {
     return;
   }
 
-  Alert.alert(title, message);
+  Alert.alert(translateText(title), translateText(message));
 }
