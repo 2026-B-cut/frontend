@@ -554,7 +554,7 @@ export const styles = StyleSheet.create({
   eventSection: {
     backgroundColor: '#E3F0F6',
     paddingBottom: 44,
-    paddingTop: 32,
+    paddingTop: 42,
   },
   pagerSectionTitle: {
     color: '#10161F',
@@ -621,7 +621,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    marginTop: 20,
+    marginTop: 30,
     paddingHorizontal: 18,
     paddingVertical: 32,
   },
@@ -638,26 +638,20 @@ export const styles = StyleSheet.create({
     paddingBottom: 50,
     paddingTop: 42,
   },
-  missionSort: {
-    color: '#8A9194',
-    fontSize: 12,
-    lineHeight: 20,
-    marginTop: 2,
-  },
   missionCardList: {
     gap: 0,
-    paddingTop: 28,
+    paddingTop: 10,
   },
   missionCardScroller: {
     marginHorizontal: -16,
   },
   missionCard: {
     borderRadius: 32,
-    height: 386,
+    height: 348,
     overflow: 'hidden',
     paddingHorizontal: 20,
     paddingTop: 45,
-    width: 280,
+    width: 251,
   },
   missionCardSea: {
     backgroundColor: '#ABD4E3',

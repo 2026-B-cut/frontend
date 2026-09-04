@@ -2,7 +2,9 @@
 import { LocalizedText as Text } from '@/components/localized-text';
 import { MissionCard } from '@/components/mission-card';
 import { TopBar } from '@/components/top-bar';
+import { MISSION_FRAME_ASPECT_RATIO } from '@/features/map/map-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { fetchMissions, type MissionItem } from '@/lib/mission-api';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
@@ -15,7 +17,6 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,8 +28,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { fetchMissions, type MissionItem } from '@/lib/mission-api';
-import { MISSION_FRAME_ASPECT_RATIO } from '@/features/map/map-data';
+import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { styles } from './styles';
 
@@ -77,9 +77,11 @@ function TourismEventCard({ event }: { event: TourismPlaceSearchItem }) {
 }
 
 function MissionRecommendationCard({
+  isLast,
   mission,
   onPress,
 }: {
+  isLast: boolean;
   mission: MissionItem | TourismMissionRecommendation;
   onPress: (mission: MissionItem | TourismMissionRecommendation) => void;
 }) {
@@ -87,6 +89,7 @@ function MissionRecommendationCard({
   const { width } = useResponsiveLayout();
   const cardWidth = Math.min(width * 0.84, 344);
   const cardHeight = cardWidth / MISSION_FRAME_ASPECT_RATIO;
+  const cardVisualGap = 8 - cardWidth * (42 / 164);
   const missionData = isRecommendation ? {
     description: mission.description,
     iconUrl: null,
@@ -104,7 +107,8 @@ function MissionRecommendationCard({
     <Pressable
       accessibilityRole="button"
       onPress={() => onPress(mission)}
-      style={[styles.mapMissionCard, { height: cardHeight, width: cardWidth }]}>
+      style={[styles.mapMissionCard, { height: cardHeight, marginRight: isLast ? 0 : cardVisualGap, width: cardWidth }]}
+    >
       <MissionCard mission={missionData} />
     </Pressable>
   );
@@ -184,11 +188,11 @@ function PlaceDetailPager({
 
       <View onLayout={(event) => setSectionHeight(2, event)} style={[styles.detailSection, styles.missionSection]}>
         <Text style={styles.pagerSectionTitle}>이곳에 어울리는 <Text style={styles.sectionTitleAccent}>미션</Text></Text>
-        <Text style={styles.missionSort}>• 추천순  ·  거리순</Text>
         {missionsToShow.length > 0 ? (
           <ScrollView contentContainerStyle={styles.missionCardList} horizontal showsHorizontalScrollIndicator={false} style={styles.missionCardScroller}>
-            {missionsToShow.map((mission) => (
+            {missionsToShow.map((mission, index) => (
               <MissionRecommendationCard
+                isLast={index === missionsToShow.length - 1}
                 key={'mission_id' in mission ? mission.mission_id : mission.id}
                 mission={mission}
                 onPress={onMissionPress}
