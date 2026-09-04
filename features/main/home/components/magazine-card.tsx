@@ -22,15 +22,15 @@ type MagazineCardProps = {
 };
 
 export function MagazineCard({ isLoading, magazinePreviewUrl, onPress, photoUrls, scheduleId }: MagazineCardProps) {
-  const isSingleMagazine = photoUrls.length === 1;
+  const usesSingleMagazineCover = photoUrls.length >= 1 && photoUrls.length <= 2;
   const magazinePhotoSlots = [0, 1, 2].map((index) => photoUrls[index] ?? null);
 
   return (
     <Pressable
       disabled={isLoading || !scheduleId}
       onPress={onPress}
-      style={[styles.magazineCard, isSingleMagazine && styles.singleMagazineFrame]}>
-      {isSingleMagazine ? (
+      style={[styles.magazineCard, usesSingleMagazineCover && styles.singleMagazineFrame]}>
+      {usesSingleMagazineCover ? (
         <View style={styles.singleMagazineInner}>
           <Image source={singleMagazineTitle} style={styles.singleMagazineTitle} contentFit="contain" />
           <Svg height="100%" style={styles.singleMagazinePhoto} viewBox="0 0 100 100" width="100%">
