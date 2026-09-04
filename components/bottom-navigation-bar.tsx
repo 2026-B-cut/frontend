@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, usePathname, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
@@ -9,12 +8,11 @@ import { useTutorialTarget, type TutorialTargetId } from '@/components/tutorial-
 
 const hiddenPathnames = ['/', '/login', '/terms', '/terms-detail', '/welcome', '/onboarding/step1', '/auth/callback', '/main/waiting', '/main/notifications', '/main/privacy-security', '/trip/participation', '/trip/capture', '/trip/review', '/trip/vote', '/trip/vote-waiting', '/trip/result', '/trip/edit', '/search-detail'];
 
-type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
-
 const navItems: {
   accessibilityLabel: string;
   href: Href;
-  icon: FeatherIconName;
+  icon: number;
+  filledIcon?: number;
   match: string[];
   tutorialId?: TutorialTargetId;
   type: 'standard' | 'search';
@@ -22,15 +20,17 @@ const navItems: {
   {
     accessibilityLabel: '홈',
     href: '/main',
-    icon: 'home',
+    icon: require('@/assets/svg/navigation_bar/home.svg'),
+    filledIcon: require('@/assets/svg/navigation_bar/home_filled.svg'),
     match: ['/main'],
     tutorialId: 'home-nav',
     type: 'standard',
   },
   {
-    accessibilityLabel: '미션',
+    accessibilityLabel: '지도',
     href: '/map',
-    icon: 'flag',
+    icon: require('@/assets/svg/navigation_bar/map.svg'),
+    filledIcon: require('@/assets/svg/navigation_bar/map_filled.svg'),
     match: ['/mission/detail', '/mission/locked', '/map', '/map/district'],
     tutorialId: 'mission-nav',
     type: 'standard',
@@ -38,21 +38,23 @@ const navItems: {
   {
     accessibilityLabel: '검색',
     href: '/search',
-    icon: 'search',
+    icon: require('@/assets/svg/navigation_bar/search.svg'),
     match: ['/search'],
     type: 'search',
   },
   {
     accessibilityLabel: '일정',
     href: '/trip/hub',
-    icon: 'calendar',
+    icon: require('@/assets/svg/navigation_bar/calendar.svg'),
+    filledIcon: require('@/assets/svg/navigation_bar/calendar_filled.svg'),
     match: ['/trip', '/trip/hub', '/trip/invite', '/trip/active', '/trip/after', '/trip/result'],
     type: 'standard',
   },
   {
     accessibilityLabel: '프로필',
     href: '/main/profile',
-    icon: 'user',
+    icon: require('@/assets/svg/navigation_bar/profile.svg'),
+    filledIcon: require('@/assets/svg/navigation_bar/profile_filled.svg'),
     match: ['/main/profile', '/main/profile-edit'],
     tutorialId: 'profile-nav',
     type: 'standard',
@@ -81,7 +83,6 @@ export function BottomNavigationBar() {
         {navItems.map((item) => {
           const isActive = isActivePath(pathname, item.match);
           const isSearch = item.type === 'search';
-          const color = isSearch ? '#ffffff' : isActive ? '#6EA4BF' : '#8A9194';
           const tutorialTarget = item.tutorialId === 'home-nav'
             ? homeTarget
             : item.tutorialId === 'mission-nav'
@@ -99,7 +100,7 @@ export function BottomNavigationBar() {
               accessibilityLabel={item.accessibilityLabel}
               accessibilityRole="button"
               accessibilityState={{ selected: isActive }}
-              hitSlop={10}
+              hitSlop={16}
               key={item.accessibilityLabel}
               onPress={handlePress}
               onLayout={tutorialTarget?.onLayout}
@@ -107,9 +108,13 @@ export function BottomNavigationBar() {
               style={[styles.item, isSearch && styles.searchItem]}>
               <View style={[isSearch ? styles.searchButton : styles.iconSlot]}>
                 {isSearch ? (
-                  <Image contentFit="contain" source={require('@/assets/svg/navigation_bar/search.svg')} style={styles.searchIcon} />
+                  <Image contentFit="contain" source={item.icon} style={styles.searchIcon} />
                 ) : (
-                  <Feather name={item.icon} size={22} color={color} />
+                  <Image
+                    contentFit="contain"
+                    source={isActive ? item.filledIcon : item.icon}
+                    style={styles.navIcon}
+                  />
                 )}
               </View>
             </Pressable>
@@ -158,6 +163,10 @@ const styles = StyleSheet.create({
     width: 52,
   },
   searchIcon: {
+    height: 20,
+    width: 20,
+  },
+  navIcon: {
     height: 20,
     width: 20,
   },
