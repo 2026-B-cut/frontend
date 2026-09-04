@@ -153,6 +153,10 @@ export async function searchTourismPlaces(
   return readTourismResponse<TourismSearchResponse>(response);
 }
 
+export async function searchTourismEvents(keyword: string, signal?: AbortSignal) {
+  return searchTourismPlaces(keyword, 1, 5, signal, TOURISM_TYPES.FESTIVAL);
+}
+
 export async function getTourismPlaceDetail(contentId: string, signal?: AbortSignal) {
   const response = await fetchWithAuth(`${API_BASE_URL}/tourism/places/${encodeURIComponent(contentId)}`, {
     headers: getLanguageHeaders(),

@@ -137,6 +137,7 @@ export function useMissionCaptureUpload({
         pathname: '/trip/review',
         params: {
           ...(scheduleId ? { scheduleId } : {}),
+          ...(scheduleMissionId ? { scheduleMissionId } : {}),
           sessionId: completionSessionId,
         },
       });
@@ -200,7 +201,7 @@ export function useMissionCaptureUpload({
       clearInterval(timer);
       socket.close();
     };
-  }, [completionSessionId, hasNavigatedAwayRef, isMissionComplete, scheduleId, setSession]);
+  }, [completionSessionId, hasNavigatedAwayRef, isMissionComplete, scheduleId, scheduleMissionId, setSession]);
 
   useEffect(() => {
     if (!judgementSessionId) {

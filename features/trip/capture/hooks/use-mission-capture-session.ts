@@ -106,7 +106,7 @@ export function useMissionCaptureSession({
         }
 
         hasNavigatedAwayRef.current = true;
-        router.replace({ pathname: '/trip/vote', params: { ...(scheduleId ? { scheduleId } : {}), sessionId: nextSession.id } });
+        router.replace({ pathname: '/trip/vote', params: { ...(scheduleId ? { scheduleId } : {}), sessionId } });
         return;
       }
 
@@ -116,7 +116,14 @@ export function useMissionCaptureSession({
         }
 
         hasNavigatedAwayRef.current = true;
-        router.replace({ pathname: '/trip/review', params: { ...(scheduleId ? { scheduleId } : {}), sessionId: nextSession.id } });
+        router.replace({
+          pathname: '/trip/review',
+          params: {
+            ...(scheduleId ? { scheduleId } : {}),
+            ...(scheduleMissionId ? { scheduleMissionId } : {}),
+            sessionId,
+          },
+        });
         return;
       }
 
@@ -149,7 +156,7 @@ export function useMissionCaptureSession({
       clearInterval(timer);
       socket.close();
     };
-  }, [hasNavigatedAwayRef, scheduleId, sessionId, setSession]);
+  }, [hasNavigatedAwayRef, scheduleId, scheduleMissionId, sessionId, setSession]);
 
   useEffect(() => {
     if (!sessionId || !session) {
@@ -194,12 +201,13 @@ export function useMissionCaptureSession({
           pathname: '/trip/review',
           params: {
             ...(scheduleId ? { scheduleId } : {}),
-            sessionId: nextSession.id,
+            ...(scheduleMissionId ? { scheduleMissionId } : {}),
+            sessionId,
           },
         });
       }
     }).catch(() => undefined);
-  }, [capturedPhotoUri, hasNavigatedAwayRef, isShootingExpired, isUploadExpired, scheduleId, session, sessionId, setSession, timeoutRefreshKeyRef]);
+  }, [capturedPhotoUri, hasNavigatedAwayRef, isShootingExpired, isUploadExpired, scheduleId, scheduleMissionId, session, sessionId, setSession, timeoutRefreshKeyRef]);
 
   useEffect(() => {
     if (!scheduleId || !scheduleMissionId) {

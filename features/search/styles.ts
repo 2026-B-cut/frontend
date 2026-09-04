@@ -230,19 +230,19 @@ export const styles = StyleSheet.create({
   loadingMore: {
     paddingVertical: 12,
   },
-  detailHeader: {
+  placeDetailHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     height: 44,
     justifyContent: 'space-between',
   },
-  detailBackButton: {
+  placeDetailBackButton: {
     alignItems: 'center',
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
-  detailHeaderTitle: {
+  placeDetailHeaderTitle: {
     color: '#10161F',
     fontSize: 16,
     fontWeight: '600',
@@ -270,13 +270,13 @@ export const styles = StyleSheet.create({
   },
   detailTitle: {
     color: '#10161F',
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '600',
     lineHeight: 31,
     marginTop: 22,
   },
   detailAddress: {
-    color: '#596268',
+    color: '#8A9194',
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 22,
@@ -289,7 +289,7 @@ export const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 5,
   },
-  detailSectionTitle: {
+  legacyDetailSectionTitle: {
     color: '#10161F',
     fontSize: 16,
     fontWeight: '700',
@@ -413,5 +413,309 @@ export const styles = StyleSheet.create({
   },
   detailMessageState: {
     flex: 1,
+  },
+  detailScreenContainer: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  detailTopSection: {
+    backgroundColor: '#FFFFFF',
+  },
+  detailPageHeader: {
+    backgroundColor: 'transparent',
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+  },
+  detailPageBackButton: {
+    alignItems: 'flex-start',
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  detailHeading: {
+    marginTop: 15,
+    paddingLeft: 0,
+    paddingRight: 0,
+  },
+  detailPageHeaderTitle: {
+    color: '#10161F',
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 37,
+  },
+  detailHeaderAddress: {
+    color: '#8A9194',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 22,
+    marginTop: 1,
+  },
+  tabBar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    borderBottomColor: '#D9E0E3',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    height: 54,
+  },
+  tab: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  tabText: {
+    color: '#10161F',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tabTextActive: {
+    fontWeight: '700',
+  },
+  tabIndicator: {
+    backgroundColor: '#000000',
+    bottom: -1,
+    height: 2,
+    position: 'absolute',
+    width: 26,
+  },
+  pagerContent: {
+    paddingBottom: 40,
+  },
+  detailSection: {
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  introSection: {
+    backgroundColor: '#FFFFFF',
+    paddingBottom: 42,
+    paddingTop: 42,
+  },
+  introImage: {
+    aspectRatio: 1.5,
+    backgroundColor: '#DDEBF2',
+    borderRadius: 16,
+    width: '100%',
+  },
+  introImagePlaceholder: {
+    aspectRatio: 1.5,
+    backgroundColor: '#DDEBF2',
+    borderRadius: 16,
+    width: '100%',
+  },
+  introTitle: {
+    color: '#10161F',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 27,
+    marginTop: 22,
+  },
+  introOverview: {
+    color: '#6D7477',
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 24,
+    marginTop: 14,
+  },
+  tagList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 17,
+  },
+  placeTag: {
+    backgroundColor: '#E3F0F6',
+    borderRadius: 50,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  placeTagText: {
+    color: '#409CB7',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  petSummary: {
+    backgroundColor: '#F7FAFC',
+    borderRadius: 14,
+    marginTop: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  petSummaryTitle: {
+    color: '#10161F',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  petSummaryText: {
+    color: '#596268',
+    fontSize: 12,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  eventSection: {
+    backgroundColor: '#E3F0F6',
+    paddingBottom: 44,
+    paddingTop: 32,
+  },
+  pagerSectionTitle: {
+    color: '#10161F',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 24,
+  },
+  sectionTitleAccent: {
+    color: '#4C88A4',
+  },
+  sectionLoader: {
+    marginTop: 42,
+  },
+  eventList: {
+    gap: 14,
+    marginTop: 20,
+  },
+  eventCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
+  },
+  eventCardHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  eventTitle: {
+    color: '#10161F',
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 24,
+  },
+  eventImage: {
+    backgroundColor: '#DDEBF2',
+    borderRadius: 8,
+    height: 58,
+    width: 78,
+  },
+  eventInfoRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 9,
+    marginTop: 14,
+  },
+  eventInfoText: {
+    color: '#10161F',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  eventDescription: {
+    color: '#6D7477',
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 21,
+    marginTop: 14,
+  },
+  emptySection: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    marginTop: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 32,
+  },
+  emptySectionText: {
+    color: '#6D7477',
+    fontWeight: '400',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  missionSection: {
+    backgroundColor: '#F6F9FB',
+    minHeight: 500,
+    paddingBottom: 50,
+    paddingTop: 42,
+  },
+  missionSort: {
+    color: '#8A9194',
+    fontSize: 12,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  missionCardList: {
+    gap: 0,
+    paddingTop: 28,
+  },
+  missionCardScroller: {
+    marginHorizontal: -16,
+  },
+  missionCard: {
+    borderRadius: 32,
+    height: 386,
+    overflow: 'hidden',
+    paddingHorizontal: 20,
+    paddingTop: 45,
+    width: 280,
+  },
+  missionCardSea: {
+    backgroundColor: '#ABD4E3',
+  },
+  missionCardMountain: {
+    backgroundColor: '#B8D7C2',
+  },
+  missionCardCity: {
+    backgroundColor: '#304957',
+  },
+  missionBadge: {
+    alignSelf: 'center',
+    borderColor: '#5C7C8A',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  missionBadgeText: {
+    color: '#456778',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  missionCardTitle: {
+    color: '#243A4A',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 29,
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  missionCardImage: {
+    alignSelf: 'center',
+    height: 206,
+    marginTop: 7,
+    width: 220,
+  },
+  missionCardImagePlaceholder: {
+    height: 206,
+    marginTop: 7,
+  },
+  missionCardDescription: {
+    color: '#456778',
+    fontSize: 12,
+    lineHeight: 19,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  missionListIconArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  missionListIcon: {
+    height: '88%',
+    width: '88%',
+  },
+  mapMissionCard: {
+    flexShrink: 0,
   },
 });

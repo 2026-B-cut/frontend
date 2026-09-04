@@ -3,19 +3,19 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard } from 'react-native';
 
-import { connectMissionSessionSocket, completeMissionSession, getMissionSession, getPassedMissionSubmissions, mergeMissionSessions, MissionSessionApiError, postMissionSessionComment, type MissionSession } from '@/lib/mission-session-api';
+import { connectMissionSessionSocket, completeMissionSession, getLatestMissionSession, getMissionSession, getPassedMissionSubmissions, mergeMissionSessions, MissionSessionApiError, postMissionSessionComment, type MissionSession } from '@/lib/mission-session-api';
 import { getCommentParticipantIds, shouldSkipMissionVote } from '../mission-review-data';
 import { getRemainingMs } from '../../trip-data';
 
 type UseMissionReviewOptions = {
   currentUserId: string | null;
-  isMissionTimeout?: boolean;
   scheduleId?: string;
+  scheduleMissionId?: string;
   sessionId?: string;
 };
 
 // review 화면의 세션 동기화, 댓글 제출, 진행 상태와 다음 화면 이동을 담당합니다.
-export function useMissionReview({ currentUserId, isMissionTimeout = false, scheduleId, sessionId }: UseMissionReviewOptions) {
+export function useMissionReview({ currentUserId, scheduleId, scheduleMissionId, sessionId }: UseMissionReviewOptions) {
   const [session, setSession] = useState<MissionSession | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +29,22 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
   const transitionSubmissionIdRef = useRef<string | null>(null);
   const hasNavigatedForward = useRef(false);
   const isCompletingSingle = useRef(false);
+
+  const loadReviewSession = useCallback(async () => {
+    if (!sessionId) {
+      throw new Error('세션 정보가 없습니다.');
+    }
+
+    try {
+      return await getMissionSession(sessionId);
+    } catch (error) {
+      if (!(error instanceof MissionSessionApiError) || error.status !== 404 || !scheduleId || !scheduleMissionId) {
+        throw error;
+      }
+
+      return getLatestMissionSession(scheduleId, scheduleMissionId);
+    }
+  }, [scheduleId, scheduleMissionId, sessionId]);
 
   const applySession = useCallback((nextSession: MissionSession) => {
     const previousSession = sessionRef.current;
@@ -88,7 +104,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     setMessage('');
 
     try {
-      const nextSession = await getMissionSession(sessionId);
+      const nextSession = await loadReviewSession();
       return applySession(nextSession);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '세션을 불러오지 못했어요.');
@@ -96,16 +112,12 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     } finally {
       setIsLoading(false);
     }
-  }, [applySession, sessionId]);
+  }, [applySession, loadReviewSession, sessionId]);
 
   useFocusEffect(
     useCallback(() => {
-      if (isMissionTimeout) {
-        return;
-      }
-
       refreshSession();
-    }, [isMissionTimeout, refreshSession])
+    }, [refreshSession])
   );
 
   const navigateToResult = useCallback(() => {
@@ -158,7 +170,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
   }, [scheduleId, sessionId]);
 
   useEffect(() => {
-    if (!sessionId || isMissionTimeout) {
+    if (!sessionId) {
       return;
     }
 
@@ -187,7 +199,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     return () => {
       socket.close();
     };
-  }, [applySession, completeSingleSubmission, isMissionTimeout, navigateToResult, navigateToVote, sessionId]);
+  }, [applySession, completeSingleSubmission, navigateToResult, navigateToVote, sessionId]);
 
   const commentParticipantIds = useMemo(() => getCommentParticipantIds(session), [session]);
   const passedSubmissions = useMemo(() => {
@@ -213,7 +225,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
   const shouldSkipVoting = useMemo(() => shouldSkipMissionVote(session, passedSubmissions), [passedSubmissions, session]);
 
   useEffect(() => {
-    if (!session || isMissionTimeout || passedSubmissions.length > 0 || hasNavigatedForward.current) {
+    if (!session || passedSubmissions.length > 0 || session.status === 'CANCELLED' || hasNavigatedForward.current) {
       return;
     }
 
@@ -223,7 +235,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     } else {
       router.back();
     }
-  }, [isMissionTimeout, passedSubmissions.length, scheduleId, session]);
+  }, [passedSubmissions.length, scheduleId, session]);
 
   const commentRemainingMs = getRemainingMs(session?.commentEndsAt, now);
   const isCommentExpired = commentRemainingMs !== null && commentRemainingMs <= 0;
@@ -233,7 +245,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
   const isAllCommentsComplete = Boolean(session && passedSubmissions.length > 0 && session.members.length > 0 && requiredCommentCount > 0 && commentProgress >= requiredCommentCount);
 
   useEffect(() => {
-    if (isMissionTimeout || !transitionSubmissionId || transitionCountdown === null) {
+    if (!transitionSubmissionId || transitionCountdown === null) {
       return;
     }
 
@@ -256,10 +268,10 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
 
     const timer = setTimeout(() => setTransitionCountdown((countdown) => countdown === null ? null : countdown - 1), 1000);
     return () => clearTimeout(timer);
-  }, [completeSingleSubmission, isAllCommentsComplete, isMissionTimeout, navigateToVote, shouldSkipVoting, transitionCountdown, transitionSubmissionId]);
+  }, [completeSingleSubmission, isAllCommentsComplete, navigateToVote, shouldSkipVoting, transitionCountdown, transitionSubmissionId]);
 
   useEffect(() => {
-    if (isMissionTimeout || !isAllCommentsComplete || transitionSubmissionId) {
+    if (!isAllCommentsComplete || transitionSubmissionId) {
       return;
     }
 
@@ -274,7 +286,7 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     return () => {
       clearTimeout(timer);
     };
-  }, [completeSingleSubmission, isAllCommentsComplete, isMissionTimeout, navigateToVote, shouldSkipVoting, transitionSubmissionId]);
+  }, [completeSingleSubmission, isAllCommentsComplete, navigateToVote, shouldSkipVoting, transitionSubmissionId]);
 
   const handleSubmitComment = async () => {
     const content = commentText.trim();
@@ -286,7 +298,31 @@ export function useMissionReview({ currentUserId, isMissionTimeout = false, sche
     try {
       setIsSubmitting(true);
       setMessage('');
-      await postMissionSessionComment(sessionId, currentSubmission.id, content);
+      // The route ID is only a lookup key. Use the ID returned by the authoritative
+      // review session so a stale transition parameter cannot be posted back.
+      const reviewSessionId = sessionRef.current?.id ?? sessionId;
+      if (!reviewSessionId) {
+        return;
+      }
+
+      try {
+        await postMissionSessionComment(reviewSessionId, currentSubmission.id, content);
+      } catch (error) {
+        if (!(error instanceof MissionSessionApiError) || error.status !== 404 || !scheduleId || !scheduleMissionId) {
+          throw error;
+        }
+
+        const latestSession = await loadReviewSession();
+        const latestSubmission = latestSession.submissions.find((submission) => submission.id === currentSubmission.id);
+
+        // A different session must not receive a comment for an unrelated photo.
+        if (!latestSubmission) {
+          throw error;
+        }
+
+        applySession(latestSession);
+        await postMissionSessionComment(latestSession.id, latestSubmission.id, content);
+      }
       setCommentText('');
       await refreshSession();
     } catch (error) {

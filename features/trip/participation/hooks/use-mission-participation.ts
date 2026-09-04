@@ -106,6 +106,7 @@ export function useMissionParticipation({
       pathname: '/trip/review',
       params: {
         scheduleId,
+        ...(nextSession.scheduleMissionId ? { scheduleMissionId: nextSession.scheduleMissionId } : {}),
         sessionId: nextSession.id,
         ...(nextSession.members.length === 1 ? { mode: 'mission-timeout' } : {}),
       },

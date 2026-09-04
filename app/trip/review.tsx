@@ -17,11 +17,10 @@ const nextArrowIcon = require('@/assets/svg/active/next_arrow.svg');
 
 // 미션 review 화면의 댓글 UI와 결과 이동 화면을 담당합니다.
 export default function MissionReviewScreen() {
-  const params = useLocalSearchParams<{ mode?: string | string[]; scheduleId?: string | string[]; sessionId?: string | string[] }>();
-  const mode = getParamValue(params.mode);
+  const params = useLocalSearchParams<{ scheduleId?: string | string[]; scheduleMissionId?: string | string[]; sessionId?: string | string[] }>();
   const scheduleId = getParamValue(params.scheduleId);
+  const scheduleMissionId = getParamValue(params.scheduleMissionId);
   const sessionId = getParamValue(params.sessionId);
-  const isMissionTimeout = mode === 'mission-timeout';
   const currentUserId = getAuthItem('user_id');
   const { bottomSafeInset, horizontalPadding, topSafeInset } = useResponsiveLayout();
   const {
@@ -43,9 +42,9 @@ export default function MissionReviewScreen() {
     setCommentText,
     transitionCountdown,
     transitionSubmissionId,
-  } = useMissionReview({ currentUserId, isMissionTimeout, scheduleId, sessionId });
+  } = useMissionReview({ currentUserId, scheduleId, scheduleMissionId, sessionId });
 
-  if (isMissionTimeout) {
+  if (session?.status === 'CANCELLED' && passedSubmissions.length === 0) {
     return <MissionFailureView onGoBack={goBackToTrip} />;
   }
 

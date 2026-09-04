@@ -1,19 +1,34 @@
-// 관광지 상세 정보와 백엔드가 추천한 미션을 표시합니다.
+// 검색 결과에서 선택한 관광지 상세 화면입니다.
 import { LocalizedText as Text } from '@/components/localized-text';
+import { MissionCard } from '@/components/mission-card';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
+  searchTourismEvents,
   TourismSearchApiError,
   type TourismMissionRecommendation,
-  type TourismPetInformation,
   type TourismPlaceDetail,
+  type TourismPlaceSearchItem,
 } from '@/lib/tourism-api';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import { fetchMissions, type MissionItem } from '@/lib/mission-api';
+import { MISSION_FRAME_ASPECT_RATIO } from '@/features/map/map-data';
 
 import { styles } from './styles';
 
@@ -21,119 +36,198 @@ function getImageUrl(imageUrl: string | null | undefined) {
   return normalizeTourismImageUrl(imageUrl);
 }
 
-function formatDistance(distanceMeters: number | null | undefined) {
-  if (distanceMeters === null || distanceMeters === undefined) {
-    return null;
-  }
-
-  return distanceMeters < 1000 ? `${distanceMeters}m` : `${(distanceMeters / 1000).toFixed(1)}km`;
+function getLocation(place: { address?: string | null; detail_address?: string | null }) {
+  return place.address || place.detail_address || '부산';
 }
 
-function getPetRows(pet: TourismPetInformation) {
-  return [
-    ['동반 유형', pet.accompaniment_type],
-    ['동반 가능 대상', pet.allowed_companions],
-    ['필수 준비물', pet.required_items],
-    ['주의사항', pet.precautions],
-    ['사고 위험 안내', pet.accident_risk_notes],
-    ['관련 시설', pet.related_facilities],
-    ['제공 물품', pet.provided_items],
-    ['구매 가능 물품', pet.purchasable_items],
-    ['대여 물품', pet.rental_items],
-  ].filter((row): row is [string, string] => Boolean(row[1]?.trim()));
+function getPlaceDistrict(address: string | null | undefined) {
+  const parts = address?.split(' ').filter(Boolean) ?? [];
+  return parts.slice(0, 2).join(' ') || '부산';
 }
 
-function MissionRecommendationCard({ mission, onPress }: { mission: TourismMissionRecommendation; onPress: (mission: TourismMissionRecommendation) => void }) {
-  const imageUrl = getImageUrl(mission.target_photo_url);
-  const distance = formatDistance(mission.distance_m);
+function EventInfoRow({
+  icon,
+  children,
+}: {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  children: string;
+}) {
+  return (
+    <View style={styles.eventInfoRow}>
+      <MaterialCommunityIcons color="#B7C0C4" name={icon} size={19} />
+      <Text style={styles.eventInfoText}>{children}</Text>
+    </View>
+  );
+}
+
+function TourismEventCard({ event }: { event: TourismPlaceSearchItem }) {
+  const imageUrl = getImageUrl(event.image_url || event.thumbnail_url);
 
   return (
-    <Pressable accessibilityRole="button" onPress={() => onPress(mission)} style={styles.missionRecommendationCard}>
-      <View style={styles.missionRecommendationHeader}>
-        <View style={styles.missionRecommendationHeading}>
-          <Text style={styles.missionRecommendationTitle}>{mission.title}</Text>
-          {mission.place_label ? <Text style={styles.missionRecommendationPlace}>{mission.place_label}</Text> : null}
-          {distance ? <Text style={styles.missionRecommendationDistance}>{distance}</Text> : null}
-        </View>
-        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.missionRecommendationImage} /> : <View style={styles.missionRecommendationImagePlaceholder} />}
+    <View style={styles.eventCard}>
+      <View style={styles.eventCardHeader}>
+        <Text style={styles.eventTitle}>{event.title}</Text>
+        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.eventImage} /> : null}
       </View>
+      <EventInfoRow icon="map-marker-outline">{getLocation(event)}</EventInfoRow>
+      {event.phone ? <EventInfoRow icon="phone-outline">{event.phone}</EventInfoRow> : null}
+      {event.detail_address ? <Text style={styles.eventDescription}>{event.detail_address}</Text> : null}
+    </View>
+  );
+}
 
-      <Text style={styles.missionRecommendationDescription}>{mission.description}</Text>
+function MissionRecommendationCard({
+  mission,
+  onPress,
+}: {
+  mission: MissionItem | TourismMissionRecommendation;
+  onPress: (mission: MissionItem | TourismMissionRecommendation) => void;
+}) {
+  const isRecommendation = 'mission_id' in mission;
+  const { width } = useResponsiveLayout();
+  const cardWidth = Math.min(width * 0.84, 344);
+  const cardHeight = cardWidth / MISSION_FRAME_ASPECT_RATIO;
+  const missionData = isRecommendation ? {
+    description: mission.description,
+    iconUrl: null,
+    title: mission.title,
+    type: mission.type,
+  } : {
+    description: mission.description,
+    iconText: mission.rewardItemIcon,
+    iconUrl: mission.emojiUrl,
+    title: mission.title,
+    type: mission.type,
+  };
 
-      {mission.match_reasons.length > 0 ? (
-        <View style={styles.matchReasons}>
-          {mission.match_reasons.map((reason) => (
-            <View key={reason} style={styles.matchReason}>
-              <Text style={styles.matchReasonText}>{reason}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onPress(mission)}
+      style={[styles.mapMissionCard, { height: cardHeight, width: cardWidth }]}>
+      <MissionCard mission={missionData} />
     </Pressable>
   );
 }
 
-function PlaceDetailContent({ detail, onMissionPress }: { detail: TourismPlaceDetail; onMissionPress: (mission: TourismMissionRecommendation) => void }) {
+function PlaceDetailPager({
+  detail,
+  events,
+  eventsError,
+  eventsLoading,
+  availableMissions,
+  onMissionPress,
+  onSectionChange,
+  scrollRef,
+  setSectionHeight,
+  snapOffsets,
+}: {
+  detail: TourismPlaceDetail;
+  events: TourismPlaceSearchItem[];
+  eventsError: string | null;
+  eventsLoading: boolean;
+  availableMissions: MissionItem[];
+  onMissionPress: (mission: MissionItem | TourismMissionRecommendation) => void;
+  onSectionChange: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollRef: React.RefObject<ScrollView | null>;
+  setSectionHeight: (index: number, event: LayoutChangeEvent) => void;
+  snapOffsets: number[];
+}) {
   const imageUrl = getImageUrl(detail.image_url || detail.thumbnail_url);
-  const petRows = detail.pet ? getPetRows(detail.pet) : [];
+  const tags = Array.from(new Set(detail.recommended_missions.flatMap((mission) => mission.match_reasons))).slice(0, 4);
+  const districtCode = detail.district_code?.trim().toUpperCase();
+  const placeMissions = districtCode
+    ? availableMissions.filter((mission) => mission.districtCode?.trim().toUpperCase() === districtCode)
+    : availableMissions;
+  const missionsByCode = new Map(availableMissions.filter((mission) => mission.code).map((mission) => [mission.code?.trim().toUpperCase(), mission]));
+  const recommendedMissions = detail.recommended_missions.map((mission) => missionsByCode.get(mission.code.trim().toUpperCase()) ?? mission);
+  const missionsToShow = placeMissions.length > 0 ? placeMissions : recommendedMissions;
 
   return (
-    <ScrollView contentContainerStyle={styles.detailContent} showsVerticalScrollIndicator={false}>
-      {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.detailImage} /> : <View style={styles.detailImagePlaceholder} />}
+    <ScrollView
+      contentContainerStyle={styles.pagerContent}
+      onScroll={onSectionChange}
+      ref={scrollRef}
+      scrollEventThrottle={16}
+      showsVerticalScrollIndicator={false}>
+      <View onLayout={(event) => setSectionHeight(0, event)} style={[styles.detailSection, styles.introSection]}>
+        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.introImage} /> : <View style={styles.introImagePlaceholder} />}
+        <Text style={styles.introTitle}>{detail.title} 소개</Text>
+        <Text style={styles.introOverview}>{detail.overview || '이 관광지에 대한 상세 설명이 아직 준비되지 않았어요.'}</Text>
 
-      <Text style={styles.detailTitle}>{detail.title}</Text>
-      {detail.address ? <Text style={styles.detailAddress}>{detail.address}</Text> : null}
-      {detail.detail_address ? <Text style={styles.detailAddress}>{detail.detail_address}</Text> : null}
-      {detail.phone ? <Text style={styles.detailPhone}>{detail.phone}</Text> : null}
-
-      <Text style={styles.detailSectionTitle}>관광지 소개</Text>
-      <Text style={styles.detailOverview}>{detail.overview || '이 관광지에 대한 상세 설명이 아직 준비되지 않았어요.'}</Text>
-
-      {detail.pet ? (
-        <View>
-          <Text style={styles.detailSectionTitle}>반려동물 정보</Text>
-          {petRows.length > 0 ? (
-            <View style={styles.petInfoCard}>
-              {petRows.map(([label, value]) => (
-                <View key={label} style={styles.petInfoRow}>
-                  <Text style={styles.petInfoLabel}>{label}</Text>
-                  <Text style={styles.petInfoValue}>{value}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.detailOverview}>반려동물 관련 정보가 아직 준비되지 않았어요.</Text>
-          )}
-        </View>
-      ) : null}
-
-      {detail.recommended_missions.length > 0 ? (
-        <View>
-          <Text style={styles.detailSectionTitle}>이 장소와 어울리는 미션</Text>
-          <View style={styles.missionRecommendationList}>
-            {detail.recommended_missions.map((mission) => (
-              <MissionRecommendationCard key={mission.mission_id} mission={mission} onPress={onMissionPress} />
-            ))}
+        {tags.length > 0 ? (
+          <View style={styles.tagList}>
+            {tags.map((tag) => <View key={tag} style={styles.placeTag}><Text style={styles.placeTagText}>{tag}</Text></View>)}
           </View>
-        </View>
-      ) : null}
+        ) : null}
+
+        {detail.pet ? (
+          <View style={styles.petSummary}>
+            <Text style={styles.petSummaryTitle}>반려동물과 함께하기 좋은 곳</Text>
+            <Text style={styles.petSummaryText}>{detail.pet.allowed_companions || detail.pet.accompaniment_type || '반려동물 동반 정보를 확인해보세요.'}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View onLayout={(event) => setSectionHeight(1, event)} style={[styles.detailSection, styles.eventSection]}>
+        <Text style={styles.pagerSectionTitle}>같이 보면 좋은 <Text style={styles.sectionTitleAccent}>주변 행사</Text></Text>
+        {eventsLoading ? <ActivityIndicator color="#659AB3" style={styles.sectionLoader} /> : events.length > 0 ? (
+          <View style={styles.eventList}>
+            {events.map((event) => <TourismEventCard event={event} key={event.content_id} />)}
+          </View>
+        ) : (
+          <View style={styles.emptySection}>
+            <Text style={styles.emptySectionText}>{eventsError || '현재 등록된 주변 행사가 없어요.'}</Text>
+          </View>
+        )}
+      </View>
+
+      <View onLayout={(event) => setSectionHeight(2, event)} style={[styles.detailSection, styles.missionSection]}>
+        <Text style={styles.pagerSectionTitle}>이곳에 어울리는 <Text style={styles.sectionTitleAccent}>미션</Text></Text>
+        <Text style={styles.missionSort}>• 추천순  ·  거리순</Text>
+        {missionsToShow.length > 0 ? (
+          <ScrollView contentContainerStyle={styles.missionCardList} horizontal showsHorizontalScrollIndicator={false} style={styles.missionCardScroller}>
+            {missionsToShow.map((mission) => (
+              <MissionRecommendationCard
+                key={'mission_id' in mission ? mission.mission_id : mission.id}
+                mission={mission}
+                onPress={onMissionPress}
+              />
+            ))}
+          </ScrollView>
+        ) : <Text style={styles.emptySectionText}>이 장소에 어울리는 미션이 아직 없어요.</Text>}
+      </View>
     </ScrollView>
   );
 }
 
 export default function TourismPlaceDetailScreen() {
-  const { topSafeInset } = useResponsiveLayout();
+  const { topInset } = useResponsiveLayout();
   const { contentId: contentIdParam } = useLocalSearchParams<{ contentId?: string | string[] }>();
   const contentId = Array.isArray(contentIdParam) ? contentIdParam[0] : contentIdParam;
   const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
+  const [events, setEvents] = useState<TourismPlaceSearchItem[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [availableMissions, setAvailableMissions] = useState<MissionItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState(0);
+  const [sectionHeights, setSectionHeights] = useState<number[]>([]);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollYRef = useRef(0);
+  const settledSectionRef = useRef(0);
+  const isSectionTransitioningRef = useRef(false);
 
-  const openMissionDetail = (mission: TourismMissionRecommendation) => {
+  const snapOffsets = sectionHeights.map((_, index) => sectionHeights.slice(0, index).reduce((total, height) => total + height, 0));
+
+  const openMissionDetail = (mission: MissionItem | TourismMissionRecommendation) => {
+    const missionCode = 'mission_id' in mission ? mission.code : mission.code ?? mission.id;
+
     router.push({
       pathname: '/mission/detail',
       params: {
-        missionCode: mission.code,
-        theme: mission.theme,
+        missionCode,
+        theme: mission.theme ?? '',
       },
     } as never);
   };
@@ -146,6 +240,14 @@ export default function TourismPlaceDetailScreen() {
 
     const controller = new AbortController();
     setDetail(null);
+    setEvents([]);
+    setEventsError(null);
+    setAvailableMissions([]);
+    setSectionHeights([]);
+    setActiveSection(0);
+    scrollYRef.current = 0;
+    settledSectionRef.current = 0;
+    isSectionTransitioningRef.current = false;
     setErrorMessage(null);
 
     void getTourismPlaceDetail(contentId, controller.signal)
@@ -161,18 +263,154 @@ export default function TourismPlaceDetailScreen() {
     return () => controller.abort();
   }, [contentId]);
 
+  useEffect(() => {
+    if (!detail) {
+      return;
+    }
+
+    let isActive = true;
+
+    void fetchMissions({})
+      .then((missions) => {
+        if (isActive) {
+          setAvailableMissions(missions);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, [detail]);
+
+  useEffect(() => {
+    if (!detail) {
+      return;
+    }
+
+    const controller = new AbortController();
+    setEventsLoading(true);
+    setEventsError(null);
+
+    void searchTourismEvents(detail.title, controller.signal)
+      .then((response) => setEvents(response.items))
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+
+        setEventsError('주변 행사 정보를 불러오지 못했어요.');
+      })
+      .finally(() => setEventsLoading(false));
+
+    return () => controller.abort();
+  }, [detail]);
+
+  const setSectionHeight = (index: number, event: LayoutChangeEvent) => {
+    const height = event.nativeEvent.layout.height;
+    setSectionHeights((current) => {
+      if (current[index] === height) {
+        return current;
+      }
+
+      const next = [...current];
+      next[index] = height;
+      return next;
+    });
+  };
+
+  const onSectionChange = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const scrollY = Math.max(event.nativeEvent.contentOffset.y, 0);
+    scrollYRef.current = scrollY;
+    const currentSection = settledSectionRef.current;
+    const currentOffset = snapOffsets[currentSection] ?? 0;
+    const nextOffset = snapOffsets[currentSection + 1];
+    const previousOffset = snapOffsets[currentSection - 1];
+    const distanceFromCurrent = scrollY - currentOffset;
+    const nextThreshold = nextOffset === undefined ? Number.POSITIVE_INFINITY : Math.max(180, (nextOffset - currentOffset) * 0.7);
+    const previousThreshold = previousOffset === undefined ? Number.POSITIVE_INFINITY : Math.max(180, (currentOffset - previousOffset) * 0.7);
+
+    if (isSectionTransitioningRef.current) {
+      const targetOffset = snapOffsets[currentSection] ?? 0;
+
+      if (Math.abs(scrollY - targetOffset) < 8) {
+        isSectionTransitioningRef.current = false;
+      }
+      return;
+    }
+
+    if (distanceFromCurrent >= nextThreshold && nextOffset !== undefined) {
+      const targetSection = currentSection + 1;
+      settledSectionRef.current = targetSection;
+      setActiveSection(targetSection);
+      isSectionTransitioningRef.current = true;
+      scrollRef.current?.scrollTo({ animated: true, y: nextOffset });
+      return;
+    }
+
+    if (distanceFromCurrent <= -previousThreshold && previousOffset !== undefined) {
+      const targetSection = currentSection - 1;
+      settledSectionRef.current = targetSection;
+      setActiveSection(targetSection);
+      isSectionTransitioningRef.current = true;
+      scrollRef.current?.scrollTo({ animated: true, y: previousOffset });
+    }
+  };
+
+  const scrollToSection = (index: number) => {
+    settledSectionRef.current = index;
+    isSectionTransitioningRef.current = true;
+    setActiveSection(index);
+    scrollRef.current?.scrollTo({ animated: true, y: snapOffsets[index] ?? 0 });
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: topSafeInset + 20 }]}> 
-      <View style={styles.detailHeader}>
-        <Pressable accessibilityLabel="검색 결과로 돌아가기" hitSlop={10} onPress={() => router.back()} style={styles.detailBackButton}>
-          <Feather color="#10161F" name="arrow-left" size={22} />
-        </Pressable>
-        <Text style={styles.detailHeaderTitle}>관광지 상세</Text>
-        <View style={styles.detailHeaderSpacer} />
+    <View style={styles.detailScreenContainer}>
+      <View style={styles.detailTopSection}>
+        <Svg height="100%" pointerEvents="none" preserveAspectRatio="none" style={StyleSheet.absoluteFill} width="100%">
+          <Defs>
+            <LinearGradient id="tourism-detail-background" x1="0" x2="0" y1="0" y2="1">
+              <Stop offset="0" stopColor="#BDEAFB" stopOpacity="0.7" />
+              <Stop offset="0.24" stopColor="#BDEAFB" stopOpacity="0.32" />
+              <Stop offset="0.56" stopColor="#FFFFFF" stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+          <Rect fill="url(#tourism-detail-background)" height="100%" width="100%" />
+        </Svg>
+
+        <View style={[styles.detailPageHeader, { paddingTop: topInset }]}>
+          <TopBar onBack={() => router.back()} title="" />
+          <View style={styles.detailHeading}>
+            <Text numberOfLines={1} style={styles.detailPageHeaderTitle}>{detail?.title || '관광지 상세'}</Text>
+            {detail ? <Text style={styles.detailHeaderAddress}>{getPlaceDistrict(detail.address || detail.detail_address)}</Text> : null}
+          </View>
+        </View>
+
+        {detail ? (
+          <View style={styles.tabBar}>
+            {['소개', '행사', '미션'].map((label, index) => (
+              <Pressable accessibilityRole="tab" accessibilityState={{ selected: activeSection === index }} key={label} onPress={() => scrollToSection(index)} style={styles.tab}>
+                <Text style={[styles.tabText, activeSection === index && styles.tabTextActive]}>{label}</Text>
+                {activeSection === index ? <View style={styles.tabIndicator} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
 
       {detail ? (
-        <PlaceDetailContent detail={detail} onMissionPress={openMissionDetail} />
+        <PlaceDetailPager
+          detail={detail}
+          events={events}
+          eventsError={eventsError}
+          eventsLoading={eventsLoading}
+          availableMissions={availableMissions}
+          onMissionPress={openMissionDetail}
+          onSectionChange={onSectionChange}
+          scrollRef={scrollRef}
+          setSectionHeight={setSectionHeight}
+          snapOffsets={snapOffsets}
+        />
       ) : errorMessage ? (
         <View style={styles.detailMessageState}>
           <Text style={styles.searchMessage}>{errorMessage}</Text>
