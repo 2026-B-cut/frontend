@@ -1,5 +1,6 @@
 // 관광지 검색 화면의 검색 전, 입력 중, 검색 후 상태를 조립합니다.
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/localized-text';
+import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
   TOURISM_TYPES,
@@ -14,6 +15,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, FlatList, Pressable, TextInput as NativeTextInput, View } from 'react-native';
+import { translateText } from '@/lib/language';
 
 import { useSearch } from './hooks/use-search';
 import { styles } from './styles';
@@ -75,6 +77,7 @@ function TourismResultCard({ place, onPress }: { place: TourismPlaceSearchItem; 
 
 export default function SearchScreen() {
   const { topSafeInset } = useResponsiveLayout();
+  const { language } = useLanguage();
   const inputRef = useRef<NativeTextInput>(null);
   const requestIdRef = useRef(0);
   const [results, setResults] = useState<TourismPlaceSearchItem[]>([]);
@@ -152,7 +155,7 @@ export default function SearchScreen() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [addRecentSearch, contentType, query]);
+  }, [addRecentSearch, contentType, language, query]);
 
   const loadMoreResults = () => {
     if (!hasSearched || isSearching || isLoadingMore || !hasMoreResults || !query.trim()) {
@@ -208,7 +211,7 @@ export default function SearchScreen() {
           value={query}
         />
         {hasQuery ? (
-          <Pressable accessibilityLabel="검색어 지우기" hitSlop={10} onPress={clearSearch} style={styles.clearButton}>
+          <Pressable accessibilityLabel={translateText('검색어 지우기')} hitSlop={10} onPress={clearSearch} style={styles.clearButton}>
             <Feather color="#FFFFFF" name="x" size={14} />
           </Pressable>
         ) : null}
@@ -273,7 +276,7 @@ export default function SearchScreen() {
                       <Pressable onPress={() => selectSearch(item)} style={styles.recentChipPressable}>
                         <Text style={styles.recentChipText}>{item}</Text>
                       </Pressable>
-                      <Pressable accessibilityLabel={`${item} 검색어 삭제`} hitSlop={8} onPress={() => removeRecentSearch(item)}>
+                      <Pressable accessibilityLabel={translateText(`${item} 검색어 삭제`)} hitSlop={8} onPress={() => removeRecentSearch(item)}>
                         <Feather color="#8A9194" name="x" size={14} />
                       </Pressable>
                     </View>

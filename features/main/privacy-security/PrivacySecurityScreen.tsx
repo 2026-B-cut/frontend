@@ -15,6 +15,7 @@ import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { fetchLegalDocuments, type LegalDocument, type LegalDocumentType } from '@/lib/auth-api';
+import { translateText } from '@/lib/language';
 
 type PermissionKey = 'location' | 'camera';
 
@@ -117,7 +118,7 @@ export default function PrivacySecurityScreen() {
 
   const openSystemSettings = () => {
     void Linking.openSettings().catch(() => {
-      Alert.alert('설정 열기 실패', '휴대폰 설정에서 앱 권한을 직접 변경해 주세요.');
+      Alert.alert(translateText('설정 열기 실패'), translateText('휴대폰 설정에서 앱 권한을 직접 변경해 주세요.'));
     });
   };
 
@@ -128,9 +129,9 @@ export default function PrivacySecurityScreen() {
       const current = permissions[key];
 
       if (!current.canAskAgain && !current.granted) {
-        Alert.alert('권한이 필요합니다', '권한을 변경하려면 휴대폰 설정에서 허용해 주세요.', [
-          { text: '취소', style: 'cancel' },
-          { text: '설정 열기', onPress: openSystemSettings },
+        Alert.alert(translateText('권한이 필요합니다'), translateText('권한을 변경하려면 휴대폰 설정에서 허용해 주세요.'), [
+          { text: translateText('취소'), style: 'cancel' },
+          { text: translateText('설정 열기'), onPress: openSystemSettings },
         ]);
         return;
       }
@@ -138,7 +139,7 @@ export default function PrivacySecurityScreen() {
       const next = await askForPermission(key);
       setPermissions((previous) => ({ ...previous, [key]: next }));
     } catch {
-      Alert.alert('권한 요청 실패', '잠시 후 다시 시도해 주세요.');
+      Alert.alert(translateText('권한 요청 실패'), translateText('잠시 후 다시 시도해 주세요.'));
     } finally {
       setLoadingPermission(null);
     }
@@ -150,14 +151,14 @@ export default function PrivacySecurityScreen() {
       return;
     }
 
-    Alert.alert('권한 관리', '권한을 끄려면 휴대폰 설정에서 변경해 주세요.', [
-      { text: '취소', style: 'cancel' },
-      { text: '설정 열기', onPress: openSystemSettings },
+    Alert.alert(translateText('권한 관리'), translateText('권한을 끄려면 휴대폰 설정에서 변경해 주세요.'), [
+      { text: translateText('취소'), style: 'cancel' },
+      { text: translateText('설정 열기'), onPress: openSystemSettings },
     ]);
   };
 
   const showDataActionInfo = (label: string, message: string) => {
-    Alert.alert(label, message, [{ text: '확인' }]);
+    Alert.alert(translateText(label), translateText(message), [{ text: translateText('확인') }]);
   };
 
   return (
@@ -167,7 +168,7 @@ export default function PrivacySecurityScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={[styles.inner, { maxWidth: contentMaxWidth }]}>
           <View style={styles.header}>
-            <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
+            <ScalePressable accessibilityLabel={translateText('뒤로 가기')} onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
               <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
             </ScalePressable>
             <Text style={styles.headerTitle}>개인정보 / 보안</Text>

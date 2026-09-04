@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchMissions, getCachedMissions, type MissionItem } from '@/lib/mission-api';
 import { getLatestMissionSession, isMissionSessionNotFoundError, type MissionSession } from '@/lib/mission-session-api';
 import { addMissionToSchedule, getCachedTripSchedules, getTripSchedule, listTripSchedules, type TripSchedule, type TripScheduleMission } from '@/lib/trip-schedule-api';
+import { translateText } from '@/lib/language';
 
 import {
   getScheduleDateOptions,
@@ -310,9 +311,9 @@ export function useMissionDetail({
       setSchedules(addableSchedules);
 
       if (nextSchedules.length === 0) {
-        Alert.alert('일정 만들기', '아직 만든 일정이 없어요. 일정을 만드시겠습니까?', [
-          { text: '아니요', style: 'cancel' },
-          { text: '네', onPress: () => onCreateScheduleForMission(mission) },
+        Alert.alert(translateText('일정 만들기'), translateText('아직 만든 일정이 없어요. 일정을 만드시겠습니까?'), [
+          { text: translateText('아니요'), style: 'cancel' },
+          { text: translateText('네'), onPress: () => onCreateScheduleForMission(mission) },
         ]);
         return;
       }

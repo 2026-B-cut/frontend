@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { translateText } from '@/lib/language';
 import {
   getMissionNotificationPreferences,
   requestMissionNotificationPermission,
@@ -103,7 +104,10 @@ export default function NotificationsScreen() {
     const granted = await requestMissionNotificationPermission();
 
     if (!granted) {
-      Alert.alert('알림 권한 필요', 'Expo Go에서는 시스템 알림을 사용할 수 없습니다. development build에서 알림 권한을 허용해주세요.');
+      Alert.alert(
+        translateText('알림 권한 필요'),
+        translateText('Expo Go에서는 시스템 알림을 사용할 수 없습니다. development build에서 알림 권한을 허용해주세요.'),
+      );
     }
 
     return granted;
@@ -165,7 +169,7 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}>
         <View style={[styles.inner, { maxWidth: contentMaxWidth }]}>
           <View style={styles.header}>
-            <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
+            <ScalePressable accessibilityLabel={translateText('뒤로 가기')} onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
               <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
             </ScalePressable>
             <Text style={styles.headerTitle}>알림 설정</Text>

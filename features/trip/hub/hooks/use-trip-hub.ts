@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { getAuthItem } from '@/lib/auth-storage';
+import { translateText } from '@/lib/language';
 import { deleteTripSchedule, getCachedTripSchedules, listTripSchedules, updateTripScheduleOrder, type TripSchedule } from '@/lib/trip-schedule-api';
 import {
   CARD_SHIFT_DISTANCE,
@@ -108,9 +109,9 @@ export function useTripHub({ language }: UseTripHubOptions) {
       return;
     }
 
-    Alert.alert('일정 삭제', `${schedule.roomName} 일정을 삭제할까요?`, [
-      { text: '취소', style: 'cancel' },
-      { text: '삭제', onPress: () => void deleteSchedule(schedule), style: 'destructive' },
+    Alert.alert(translateText('일정 삭제'), translateText(`${schedule.roomName} 일정을 삭제할까요?`), [
+      { text: translateText('취소'), style: 'cancel' },
+      { text: translateText('삭제'), onPress: () => void deleteSchedule(schedule), style: 'destructive' },
     ]);
   };
 
