@@ -16,7 +16,11 @@ export function useSearch() {
       return;
     }
 
-    setRecentSearches((current) => [nextQuery, ...current.filter((item) => item !== nextQuery)].slice(0, 8));
+    setRecentSearches((current) => [nextQuery, ...current.filter((item) => item !== nextQuery)].slice(0, 5));
+  }, []);
+
+  const replaceRecentSearches = useCallback((values: string[]) => {
+    setRecentSearches(values.map((value) => value.trim()).filter(Boolean).slice(0, 5));
   }, []);
 
   const clearSearch = useCallback(() => {
@@ -36,6 +40,7 @@ export function useSearch() {
     recentSearches,
     setQuery: updateQuery,
     addRecentSearch,
+    replaceRecentSearches,
     clearSearch,
     removeRecentSearch,
     clearRecentSearches,

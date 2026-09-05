@@ -3,6 +3,8 @@ import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/compon
 import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
+  getRecentTourismSearches,
+  getRecommendedTourismKeywords,
   TourismSearchApiError,
   normalizeTourismImageUrl,
   searchTourismPlaces,
@@ -18,7 +20,7 @@ import { translateText } from '@/lib/language';
 import { useSearch } from './hooks/use-search';
 import { styles } from './styles';
 
-const recommendedSearches = ['부산 맛집 투어', '커플 여행코스', '가족과 함께', '아이들이 좋아하는', '바다 근처'];
+const fallbackRecommendedSearches = ['부산 맛집 투어', '커플 여행코스', '가족과 함께', '아이들이 좋아하는', '바다 근처'];
 
 function getLocation(place: TourismPlaceSearchItem) {
   return place.address || place.detail_address || '부산';
@@ -84,9 +86,37 @@ export default function SearchScreen() {
     clearSearch,
     removeRecentSearch,
     clearRecentSearches,
+    replaceRecentSearches,
   } = useSearch();
+  const [recommendedSearches, setRecommendedSearches] = useState(fallbackRecommendedSearches);
   const hasQuery = Boolean(query.trim());
   const hasMoreResults = results.length < totalCount;
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void getRecentTourismSearches(controller.signal)
+      .then((response) => replaceRecentSearches(response.items.map((item) => item.keyword)))
+      .catch((error: unknown) => {
+        if (!isAbortError(error)) {
+          // The local search history remains available when the server history cannot be read.
+        }
+      });
+
+    void getRecommendedTourismKeywords(controller.signal)
+      .then((response) => {
+        if (response.keywords.length > 0) {
+          setRecommendedSearches(response.keywords);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isAbortError(error)) {
+          // Keep the fallback recommendations when the server recommendations cannot be read.
+        }
+      });
+
+    return () => controller.abort();
+  }, [language, replaceRecentSearches]);
 
   useEffect(() => {
     const keyword = query.trim();

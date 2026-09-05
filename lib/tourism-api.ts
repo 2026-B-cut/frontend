@@ -25,6 +25,23 @@ export type TourismSearchResponse = {
   items: TourismPlaceSearchItem[];
 };
 
+export type TourismContentType = '12' | '14' | '15' | '25' | '28' | '32' | '38';
+
+export type TourismRecentSearchItem = {
+  keyword: string;
+  content_type: TourismContentType;
+  search_count: number;
+  searched_at: string;
+};
+
+export type TourismRecentSearchResponse = {
+  items: TourismRecentSearchItem[];
+};
+
+export type TourismRecommendedKeywordResponse = {
+  keywords: string[];
+};
+
 export type TourismPetInformation = {
   accompaniment_type?: string | null;
   allowed_companions?: string | null;
@@ -42,7 +59,7 @@ export type TourismMissionRecommendation = {
   code: string;
   title: string;
   description: string;
-  theme: 'MOUNTAIN' | 'SEA' | 'CITY';
+  theme: 'MOUNTAIN' | 'SEA' | 'CITY' | 'DEMO';
   type: 'BASIC' | 'RARE' | 'SIDE';
   place_label?: string | null;
   address?: string | null;
@@ -116,6 +133,7 @@ export async function searchTourismPlaces(
   page = 1,
   pageSize = 20,
   signal?: AbortSignal,
+  contentType: TourismContentType = '12',
 ) {
   const trimmedKeyword = keyword.trim();
 
@@ -128,6 +146,7 @@ export async function searchTourismPlaces(
   }
 
   const params = new URLSearchParams({
+    content_type: contentType,
     keyword: trimmedKeyword,
     page: String(page),
     page_size: String(Math.min(Math.max(pageSize, 1), 50)),
@@ -138,6 +157,24 @@ export async function searchTourismPlaces(
   });
 
   return readTourismResponse<TourismSearchResponse>(response);
+}
+
+export async function getRecentTourismSearches(signal?: AbortSignal) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/tourism/recent-searches`, {
+    headers: getLanguageHeaders(),
+    signal,
+  });
+
+  return readTourismResponse<TourismRecentSearchResponse>(response);
+}
+
+export async function getRecommendedTourismKeywords(signal?: AbortSignal) {
+  const response = await fetchWithAuth(`${API_BASE_URL}/tourism/recommended-keywords`, {
+    headers: getLanguageHeaders(),
+    signal,
+  });
+
+  return readTourismResponse<TourismRecommendedKeywordResponse>(response);
 }
 
 export async function getTourismPlaceDetail(contentId: string, signal?: AbortSignal) {
