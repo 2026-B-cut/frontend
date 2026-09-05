@@ -2,8 +2,8 @@ import { API_BASE_URL } from '@/lib/api-config';
 import { getLanguageHeaders } from '@/lib/language';
 import { getAuthItem } from '@/lib/auth-storage';
 
-import { fetchWithAuth, patchJson, postMultipart } from './auth-client';
-import type { AuthUser, ProfileImageUploadInput } from './auth-types';
+import { fetchWithAuth, patchJson, postMultipart, readAuthResponse } from './auth-client';
+import type { CurrentUserResponse, ProfileImageUploadInput, UserResponse } from './auth-types';
 
 export function getProfileImageUrl(profileImageUrl: string | null | undefined) {
   if (!profileImageUrl) {
@@ -18,17 +18,17 @@ export function getProfileImageUrl(profileImageUrl: string | null | undefined) {
 }
 
 export function updateProfileEmoji(profileEmoji: string) {
-  return patchJson<AuthUser>('/auth/me/profile-emoji', { profile_emoji: profileEmoji });
+  return patchJson<UserResponse>('/auth/me/profile-emoji', { profile_emoji: profileEmoji });
 }
 
 export function uploadProfileImage(image: ProfileImageUploadInput) {
   const formData = new FormData();
-  formData.append('image', image as unknown as Blob);
+  formData.append('image', image.file ?? (image as unknown as Blob));
 
-  return postMultipart<AuthUser>('/auth/me/profile-image', formData);
+  return postMultipart<UserResponse>('/auth/me/profile-image', formData);
 }
 
-export async function fetchMe(): Promise<AuthUser> {
+export async function fetchMe(): Promise<CurrentUserResponse> {
   const token = getAuthItem('access_token');
 
   if (!token) {
@@ -41,9 +41,5 @@ export async function fetchMe(): Promise<AuthUser> {
     },
   });
 
-  if (!res.ok) {
-    throw new Error('내 정보 조회에 실패했습니다.');
-  }
-
-  return res.json();
+  return readAuthResponse<CurrentUserResponse>(res);
 }

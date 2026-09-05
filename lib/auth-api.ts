@@ -34,7 +34,7 @@ export {
   updateProfileEmoji,
   uploadProfileImage,
 } from './auth/auth-profile-api';
-export type { AuthTokens, AuthUser } from './auth/auth-types';
+export type { AuthTokens, AuthUser, CurrentUserResponse, UserResponse } from './auth/auth-types';
 export type {
   AuthBootstrap,
   LegalDocument,

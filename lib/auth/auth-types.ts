@@ -2,6 +2,7 @@ export type ProfileImageUploadInput = {
   name: string;
   type: string;
   uri: string;
+  file?: Blob;
 };
 
 export type AuthTokens = {
@@ -11,7 +12,7 @@ export type AuthTokens = {
   user_id?: number | string;
 };
 
-export type AuthUser = {
+export type UserResponse = {
   id: number;
   provider: string;
   provider_user_id: string;
@@ -23,3 +24,11 @@ export type AuthUser = {
   updated_at: string;
   last_login_at: string | null;
 };
+
+export type CurrentUserResponse = UserResponse & {
+  completed_mission_count: number;
+  created_magazine_count: number;
+};
+
+/** The authenticated user's complete response from GET /auth/me. */
+export type AuthUser = CurrentUserResponse;

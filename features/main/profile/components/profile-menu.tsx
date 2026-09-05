@@ -1,4 +1,4 @@
-// 비밀번호 변경·로그아웃·계정 탈퇴 메뉴를 담당합니다.
+// 개인정보·알림·계정 작업 메뉴를 담당합니다.
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 
@@ -18,13 +18,14 @@ type ProfileMenuProps = {
   isAccountActionInProgress: boolean;
   onDeleteAccount: () => void;
   onLogout: () => void;
+  onOpenAccountManagement: () => void;
   onOpenNotifications: () => void;
   onOpenPrivacySecurity: () => void;
   onPasswordReset: () => void;
 };
 
 const menuItems: MenuItem[] = [
-  { icon: 'account-circle-outline', label: '카카오 계정' },
+  { icon: 'account-cog-outline', label: '계정 관리' },
   { icon: 'lock-outline', label: '개인정보 / 보안' },
   { icon: 'bell-outline', label: '알림' },
 ];
@@ -35,6 +36,7 @@ export function ProfileMenu({
   isAccountActionInProgress,
   onDeleteAccount,
   onLogout,
+  onOpenAccountManagement,
   onOpenNotifications,
   onOpenPrivacySecurity,
   onPasswordReset,
@@ -48,11 +50,11 @@ export function ProfileMenu({
             disabled={isAccountActionInProgress}
             key={item.label}
             onPress={
-              item.label === '알림'
+              item.label === '계정 관리'
+                ? onOpenAccountManagement
+                : item.label === '알림'
                 ? onOpenNotifications
-                : item.label === '개인정보 / 보안'
-                  ? onOpenPrivacySecurity
-                  : () => {}
+                : onOpenPrivacySecurity
             }
             pressedScale={0.98}
             style={styles.menuRow}>

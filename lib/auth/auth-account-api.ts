@@ -3,7 +3,7 @@ import { getLanguageHeaders } from '@/lib/language';
 
 import { fetchWithAuth, patchJson, postJson, readAuthResponse } from './auth-client';
 import { clearAuthSession } from './auth-session';
-import type { AuthTokens, AuthUser } from './auth-types';
+import type { AuthTokens, UserResponse } from './auth-types';
 
 export function registerWithEmail(email: string, password: string, name: string) {
   // 이메일 회원가입 요청
@@ -34,7 +34,7 @@ export function refreshAuthToken(refreshToken: string) {
 }
 
 export function updateMe(nickname: string) {
-  return patchJson<AuthUser>('/auth/me', { nickname });
+  return patchJson<UserResponse>('/auth/me', { nickname });
 }
 
 export async function deleteCurrentAccount() {

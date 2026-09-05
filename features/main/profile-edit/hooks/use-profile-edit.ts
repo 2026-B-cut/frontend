@@ -161,7 +161,7 @@ export function useProfileEdit({ onSaved }: UseProfileEditOptions) {
     try {
       setIsSavingProfile(true);
       setSheetMessage('');
-      const updatedUser = await uploadProfileImage({ name: fileName, type: mimeType, uri: asset.uri });
+      const updatedUser = await uploadProfileImage({ file: asset.file, name: fileName, type: mimeType, uri: asset.uri });
       setProfileImageUrl(updatedUser.profile_image_url);
       setProfileEmoji(updatedUser.profile_emoji);
       setPendingProfileEmoji(null);

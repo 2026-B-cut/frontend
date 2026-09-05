@@ -9,10 +9,17 @@ export const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
+  accountPageContainer: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  accountPageHeader: {
+    backgroundColor: '#FFFFFF',
+  },
   profileSection: {
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    minHeight: 368,
+    minHeight: 326,
   },
   header: {
     alignItems: 'center',
@@ -35,7 +42,7 @@ export const styles = StyleSheet.create({
   },
   profileInfo: {
     alignItems: 'center',
-    marginTop: 65,
+    marginTop: 35,
   },
   avatarButton: {
     height: 110,
@@ -59,6 +66,46 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0,
     marginTop: 15,
+  },
+  accountSummarySection: {
+    paddingBottom: 28,
+    paddingTop: 26,
+  },
+  accountSection: {
+    marginBottom: 26,
+    width: '100%',
+  },
+  accountCard: {
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+  },
+  accountSectionTitle: {
+    color: '#53666D',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 9,
+  },
+  accountDetailRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 72,
+    paddingVertical: 14,
+  },
+  accountRowLabel: {
+    color: '#10161F',
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  accountRowValue: {
+    color: '#10161F',
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 10,
+    maxWidth: '58%',
+    textAlign: 'right',
   },
   menuSection: {
     alignItems: 'center',

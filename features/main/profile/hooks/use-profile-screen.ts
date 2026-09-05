@@ -15,6 +15,10 @@ type UseProfileScreenOptions = {
 export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
   const [nickname, setNickname] = useState('사용자');
   const [email, setEmail] = useState('');
+  const [provider, setProvider] = useState('email');
+  const [createdAt, setCreatedAt] = useState('');
+  const [completedMissionCount, setCompletedMissionCount] = useState(0);
+  const [createdMagazineCount, setCreatedMagazineCount] = useState(0);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [profileEmoji, setProfileEmoji] = useState<string | null>(null);
   const [isAccountActionInProgress, setIsAccountActionInProgress] = useState(false);
@@ -61,8 +65,12 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
       fetchMe()
         .then((user) => {
           if (isActive) {
+            setCompletedMissionCount(user.completed_mission_count ?? 0);
+            setCreatedAt(user.created_at);
+            setCreatedMagazineCount(user.created_magazine_count ?? 0);
             setEmail(user.email?.trim() || '');
             setNickname(user.nickname?.trim() || '사용자');
+            setProvider(user.provider?.trim().toLowerCase() || 'email');
             setProfileImageUrl(user.profile_image_url);
             setProfileEmoji(user.profile_emoji);
           }
@@ -70,6 +78,11 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
         .catch(() => {
           if (isActive) {
             setNickname('사용자');
+            setProvider('email');
+            setCreatedAt('');
+            setCompletedMissionCount(0);
+            setCreatedMagazineCount(0);
+            setEmail('');
             setProfileImageUrl(null);
             setProfileEmoji(null);
           }
@@ -83,6 +96,10 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
 
   return {
     email,
+    provider,
+    createdAt,
+    completedMissionCount,
+    createdMagazineCount,
     handleDeleteAccount,
     handleLogout,
     isAccountActionInProgress,

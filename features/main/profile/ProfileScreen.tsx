@@ -73,6 +73,7 @@ export default function ProfileScreen() {
         isAccountActionInProgress={profile.isAccountActionInProgress}
         onDeleteAccount={() => setIsDeleteAccountModalVisible(true)}
         onLogout={profile.handleLogout}
+        onOpenAccountManagement={() => router.push('/main/account-management')}
         onOpenNotifications={() => router.push('/main/notifications')}
         onOpenPrivacySecurity={() => router.push('/main/privacy-security')}
         onPasswordReset={() => router.push({ pathname: '/login', params: { mode: 'reset', returnTo: 'profile' } })}
