@@ -1,0 +1,27 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  container: { backgroundColor: '#FFFFFF', flex: 1 },
+  header: { alignItems: 'center', flexDirection: 'row', height: 44, justifyContent: 'space-between' },
+  backButton: { alignItems: 'center', height: 44, justifyContent: 'center', width: 44 },
+  headerTitle: { color: '#10161F', fontSize: 16, fontWeight: '600' },
+  headerSpacer: { width: 44 },
+  listContent: { paddingTop: 22 },
+  item: { borderBottomColor: '#E7ECEE', borderBottomWidth: 1, paddingVertical: 19 },
+  itemHeader: { alignItems: 'center', flexDirection: 'row' },
+  unreadDot: { backgroundColor: '#409CB7', borderRadius: 99, height: 7, marginRight: 8, width: 7 },
+  title: { color: '#10161F', flex: 1, fontSize: 16, fontWeight: '600' },
+  priority: { backgroundColor: '#EAF7FA', borderRadius: 6, color: '#287D95', fontSize: 10, fontWeight: '700', marginLeft: 8, paddingHorizontal: 7, paddingVertical: 4 },
+  summary: { color: '#59666B', fontSize: 13, lineHeight: 20, marginTop: 9 },
+  date: { color: '#8A9194', fontSize: 11, marginTop: 9 },
+  message: { color: '#8A9194', fontSize: 14, paddingTop: 70, textAlign: 'center' },
+  loadingMore: { paddingVertical: 18 },
+  detailScroll: { flex: 1 },
+  detailContent: { paddingBottom: 40, paddingTop: 28 },
+  detailTitle: { color: '#10161F', fontSize: 24, fontWeight: '700', lineHeight: 32 },
+  detailDate: { color: '#8A9194', fontSize: 12, marginTop: 10 },
+  detailImage: { borderRadius: 14, height: 200, marginTop: 24, width: '100%' },
+  detailBody: { color: '#252B30', fontSize: 15, lineHeight: 25, marginTop: 28 },
+  linkButton: { backgroundColor: '#EAF7FA', borderRadius: 12, justifyContent: 'center', marginTop: 26, minHeight: 48, paddingHorizontal: 16 },
+  linkText: { color: '#287D95', fontSize: 14, fontWeight: '700', textAlign: 'center' },
+});

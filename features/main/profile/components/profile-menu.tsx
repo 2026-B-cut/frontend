@@ -19,6 +19,7 @@ type ProfileMenuProps = {
   onDeleteAccount: () => void;
   onLogout: () => void;
   onOpenAccountManagement: () => void;
+  onOpenAnnouncements: () => void;
   onOpenNotifications: () => void;
   onOpenPrivacySecurity: () => void;
   onPasswordReset: () => void;
@@ -28,6 +29,7 @@ const menuItems: MenuItem[] = [
   { icon: 'account-cog-outline', label: '계정 관리' },
   { icon: 'lock-outline', label: '개인정보 / 보안' },
   { icon: 'bell-outline', label: '알림' },
+  { icon: 'bullhorn-outline', label: '공지사항' },
 ];
 
 export function ProfileMenu({
@@ -37,6 +39,7 @@ export function ProfileMenu({
   onDeleteAccount,
   onLogout,
   onOpenAccountManagement,
+  onOpenAnnouncements,
   onOpenNotifications,
   onOpenPrivacySecurity,
   onPasswordReset,
@@ -54,6 +57,8 @@ export function ProfileMenu({
                 ? onOpenAccountManagement
                 : item.label === '알림'
                 ? onOpenNotifications
+                : item.label === '공지사항'
+                ? onOpenAnnouncements
                 : onOpenPrivacySecurity
             }
             pressedScale={0.98}
