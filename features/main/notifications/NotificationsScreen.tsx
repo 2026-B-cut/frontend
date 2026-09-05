@@ -8,8 +8,8 @@ import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { translateText } from '@/lib/language';
+import { getNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from '@/lib/notification-api';
 import {
-  getMissionNotificationPreferences,
   requestMissionNotificationPermission,
   cancelAllMagazineNotifications,
   rescheduleMagazineNotifications,
@@ -30,12 +30,6 @@ type NotificationRowProps = {
   value: boolean;
   disabled?: boolean;
 };
-
-const notificationTypes: NotificationRowProps[] = [
-  { icon: 'flag-checkered', label: '미션 알림', value: true },
-  { icon: 'book-open-page-variant-outline', label: '매거진 알림', value: true },
-  { icon: 'bullhorn-outline', label: '공지 알림', value: true },
-];
 
 function NotificationToggle({ disabled = false, onToggle, value }: { disabled?: boolean; onToggle?: () => void; value: boolean }) {
   const toggle = (
@@ -78,22 +72,46 @@ export default function NotificationsScreen() {
   const [masterEnabled, setMasterEnabled] = useState(true);
   const [missionEnabled, setMissionEnabled] = useState(true);
   const [magazineEnabled, setMagazineEnabled] = useState(true);
+  const [announcementEnabled, setAnnouncementEnabled] = useState(true);
+  const [marketingEnabled, setMarketingEnabled] = useState(false);
   const [nightEnabled, setNightEnabled] = useState(false);
+  const [requiredMarketingConsentVersion, setRequiredMarketingConsentVersion] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const applyPreferences = (preferences: NotificationPreferences) => {
+    setMasterEnabled(preferences.masterEnabled);
+    setMagazineEnabled(preferences.magazineEnabled);
+    setMissionEnabled(preferences.missionEnabled);
+    setAnnouncementEnabled(preferences.announcementEnabled);
+    setMarketingEnabled(preferences.marketingEnabled);
+    setNightEnabled(preferences.nightEnabled);
+    setRequiredMarketingConsentVersion(preferences.requiredMarketingConsentVersion);
+  };
 
   useEffect(() => {
     let isActive = true;
 
-    getMissionNotificationPreferences().then((preferences) => {
-      if (!isActive) {
-        return;
-      }
+    getNotificationPreferences()
+      .then((preferences) => {
+        if (!isActive) {
+          return;
+        }
 
-      setMasterEnabled(preferences.masterEnabled);
-      setMagazineEnabled(preferences.magazineEnabled);
-      setMissionEnabled(preferences.missionEnabled);
-      setNightEnabled(preferences.nightEnabled);
-      setIsPreferencesReady(true);
-    });
+        applyPreferences(preferences);
+        setIsPreferencesReady(true);
+        return Promise.all([
+          setMasterNotificationEnabled(preferences.masterEnabled),
+          setMagazineNotificationEnabled(preferences.magazineEnabled),
+          setMissionNotificationEnabled(preferences.missionEnabled),
+          setNightNotificationEnabled(preferences.nightEnabled),
+        ]);
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsPreferencesReady(true);
+          Alert.alert(translateText('알림 설정 불러오기 실패'), translateText('알림 설정을 불러오지 못했어요.'));
+        }
+      });
 
     return () => {
       isActive = false;
@@ -120,11 +138,44 @@ export default function NotificationsScreen() {
       return;
     }
 
-    setMasterEnabled(nextValue);
-    await setMasterNotificationEnabled(nextValue);
+    await savePreferences({ masterEnabled: nextValue }, async (preferences) => {
+      await setMasterNotificationEnabled(preferences.masterEnabled);
+      if (!preferences.masterEnabled) {
+        await cancelAllMagazineNotifications();
+      }
+    });
+  };
 
-    if (!nextValue) {
-      await cancelAllMagazineNotifications();
+  const handleAnnouncementToggle = async () => {
+    await savePreferences({ announcementEnabled: !announcementEnabled });
+  };
+
+  const handleMarketingToggle = async () => {
+    const nextValue = !marketingEnabled;
+
+    await savePreferences({
+      marketingEnabled: nextValue,
+      ...(nextValue && requiredMarketingConsentVersion ? { marketingConsentVersion: requiredMarketingConsentVersion } : {}),
+    });
+  };
+
+  const savePreferences = async (
+    changes: Parameters<typeof updateNotificationPreferences>[0],
+    afterSave?: (preferences: NotificationPreferences) => Promise<void>,
+  ) => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const preferences = await updateNotificationPreferences(changes);
+      applyPreferences(preferences);
+      await afterSave?.(preferences);
+    } catch (error) {
+      Alert.alert(translateText('알림 설정 저장 실패'), error instanceof Error ? error.message : translateText('알림 설정을 저장하지 못했어요.'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -135,12 +186,12 @@ export default function NotificationsScreen() {
       return;
     }
 
-    setMagazineEnabled(nextValue);
-    await setMagazineNotificationEnabled(nextValue);
-
-    if (!nextValue) {
-      await cancelAllMagazineNotifications();
-    }
+    await savePreferences({ magazineEnabled: nextValue }, async (preferences) => {
+      await setMagazineNotificationEnabled(preferences.magazineEnabled);
+      if (!preferences.magazineEnabled) {
+        await cancelAllMagazineNotifications();
+      }
+    });
   };
 
   const handleMissionToggle = async () => {
@@ -150,16 +201,16 @@ export default function NotificationsScreen() {
       return;
     }
 
-    setMissionEnabled(nextValue);
-    await setMissionNotificationEnabled(nextValue);
+    await savePreferences({ missionEnabled: nextValue }, (preferences) => setMissionNotificationEnabled(preferences.missionEnabled));
   };
 
   const handleNightToggle = async () => {
     const nextValue = !nightEnabled;
 
-    setNightEnabled(nextValue);
-    await setNightNotificationEnabled(nextValue);
-    await rescheduleMagazineNotifications(nextValue);
+    await savePreferences({ nightEnabled: nextValue }, async (preferences) => {
+      await setNightNotificationEnabled(preferences.nightEnabled);
+      await rescheduleMagazineNotifications(preferences.nightEnabled);
+    });
   };
 
   return (
@@ -185,20 +236,14 @@ export default function NotificationsScreen() {
                 <Text style={styles.masterLabel}>알림 수신</Text>
                 <Text style={styles.masterDescription}>전체 알림을 한 번에 설정할 수 있어요.</Text>
               </View>
-              <NotificationToggle disabled={!isPreferencesReady} onToggle={handleMasterToggle} value={masterEnabled} />
+              <NotificationToggle disabled={!isPreferencesReady || isSaving} onToggle={handleMasterToggle} value={masterEnabled} />
             </View>
 
             <Text style={styles.sectionTitle}>알림 유형</Text>
             <View style={styles.settingCard}>
-              {notificationTypes.map((item) => (
-                <NotificationRow
-                  key={item.label}
-                  {...item}
-                  disabled={!isPreferencesReady || ((item.label === '미션 알림' || item.label === '매거진 알림') && !masterEnabled)}
-                  onToggle={item.label === '미션 알림' ? handleMissionToggle : item.label === '매거진 알림' ? handleMagazineToggle : undefined}
-                  value={item.label === '미션 알림' ? missionEnabled : item.label === '매거진 알림' ? magazineEnabled : item.value}
-                />
-              ))}
+              <NotificationRow disabled={!isPreferencesReady || isSaving || !masterEnabled} icon="flag-checkered" label="미션 알림" onToggle={handleMissionToggle} value={missionEnabled} />
+              <NotificationRow disabled={!isPreferencesReady || isSaving || !masterEnabled} icon="book-open-page-variant-outline" label="매거진 알림" onToggle={handleMagazineToggle} value={magazineEnabled} />
+              <NotificationRow disabled={!isPreferencesReady || isSaving || !masterEnabled} icon="bullhorn-outline" label="공지 알림" onToggle={handleAnnouncementToggle} value={announcementEnabled} />
             </View>
 
             <Text style={styles.sectionTitle}>추가 수신 동의</Text>
@@ -207,19 +252,21 @@ export default function NotificationsScreen() {
                 description="이벤트, 혜택 및 프로모션 소식을 받아요."
                 icon="gift-outline"
                 label="마케팅 알림 수신 동의"
-                required
-                value={false}
+                disabled={!isPreferencesReady || isSaving}
+                onToggle={handleMarketingToggle}
+                value={marketingEnabled}
               />
               <NotificationRow
                 description={nightEnabled ? '21:00 ~ 08:00에도 알림을 받을 수 있어요.' : '야간 알림은 오전 8시에 알려드려요.'}
                 icon="moon-waning-crescent"
                 label="야간 알림 수신 동의"
-                disabled={!isPreferencesReady || !masterEnabled}
+                disabled={!isPreferencesReady || isSaving || !masterEnabled}
                 onToggle={handleNightToggle}
                 value={nightEnabled}
               />
             </View>
 
+            {/*
             <Text style={styles.sectionTitle}>휴대폰 알림 설정</Text>
             <ScalePressable accessibilityRole="button" onPress={() => {}} pressedScale={0.98} style={styles.systemSettingCard}>
               <View style={styles.settingIconWrap}>
@@ -231,6 +278,7 @@ export default function NotificationsScreen() {
               </View>
               <MaterialCommunityIcons color="#8A9194" name="chevron-right" size={27} />
             </ScalePressable>
+            */}
           </View>
         </View>
       </ScrollView>
