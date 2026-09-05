@@ -3,6 +3,8 @@ import Constants from 'expo-constants';
 
 import { getPersistentAuthItem, setPersistentAuthItem } from '@/lib/auth-storage';
 
+import { registerCurrentNotificationDevice } from './push-device-api';
+
 type NotificationsModule = typeof import('expo-notifications');
 type Notification = import('expo-notifications').Notification;
 
@@ -97,10 +99,15 @@ export async function requestMissionNotificationPermission() {
   const currentPermission = await Notifications.getPermissionsAsync();
 
   if (currentPermission.granted) {
+    await registerCurrentNotificationDevice().catch(() => null);
     return true;
   }
 
   const requestedPermission = await Notifications.requestPermissionsAsync();
+  if (requestedPermission.granted) {
+    await registerCurrentNotificationDevice().catch(() => null);
+  }
+
   return requestedPermission.granted;
 }
 

@@ -9,6 +9,10 @@ import {
 import type { AuthTokens } from './auth-types';
 
 export async function clearAuthSession() {
+  await import('@/lib/push-device-api')
+    .then(({ removeCurrentNotificationDevice }) => removeCurrentNotificationDevice())
+    .catch(() => undefined);
+
   await Promise.all([
     deletePersistentAuthItem('access_token'),
     deletePersistentAuthItem('refresh_token'),
@@ -26,6 +30,11 @@ export async function saveAuthTokens(data: AuthTokens, persist = false) {
   }
 
   setAuthItem('access_token', accessToken);
+
+  // Device registration is best-effort and must not block login or token refresh.
+  void import('@/lib/push-device-api')
+    .then(({ registerCurrentNotificationDevice }) => registerCurrentNotificationDevice())
+    .catch(() => undefined);
 
   if (refreshToken) {
     setAuthItem('refresh_token', refreshToken);
