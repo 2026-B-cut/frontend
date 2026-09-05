@@ -3,11 +3,9 @@ import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/compon
 import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
-  TOURISM_TYPES,
   TourismSearchApiError,
   normalizeTourismImageUrl,
   searchTourismPlaces,
-  type TourismContentType,
   type TourismPlaceSearchItem,
 } from '@/lib/tourism-api';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,15 +19,6 @@ import { useSearch } from './hooks/use-search';
 import { styles } from './styles';
 
 const recommendedSearches = ['부산 맛집 투어', '커플 여행코스', '가족과 함께', '아이들이 좋아하는', '바다 근처'];
-const tourismTypeItems: Array<{ label: string; value: TourismContentType }> = [
-  { label: '관광지', value: TOURISM_TYPES.ATTRACTION },
-  { label: '문화시설', value: TOURISM_TYPES.CULTURE },
-  { label: '축제·행사', value: TOURISM_TYPES.FESTIVAL },
-  { label: '여행코스', value: TOURISM_TYPES.COURSE },
-  { label: '레포츠', value: TOURISM_TYPES.LEISURE },
-  { label: '숙박', value: TOURISM_TYPES.ACCOMMODATION },
-  { label: '쇼핑', value: TOURISM_TYPES.SHOPPING },
-];
 
 function getLocation(place: TourismPlaceSearchItem) {
   return place.address || place.detail_address || '부산';
@@ -87,7 +76,6 @@ export default function SearchScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [contentType, setContentType] = useState<TourismContentType>(TOURISM_TYPES.ATTRACTION);
   const {
     query,
     recentSearches,
@@ -124,7 +112,7 @@ export default function SearchScreen() {
     setIsSearching(true);
 
     const timeoutId = setTimeout(() => {
-      void searchTourismPlaces(keyword, 1, 20, controller.signal, contentType)
+      void searchTourismPlaces(keyword, 1, 20, controller.signal)
         .then((response) => {
           if (requestIdRef.current !== requestId) {
             return;
@@ -155,7 +143,7 @@ export default function SearchScreen() {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [addRecentSearch, contentType, language, query]);
+  }, [addRecentSearch, language, query]);
 
   const loadMoreResults = () => {
     if (!hasSearched || isSearching || isLoadingMore || !hasMoreResults || !query.trim()) {
@@ -165,7 +153,7 @@ export default function SearchScreen() {
     const nextPage = page + 1;
     setIsLoadingMore(true);
 
-    void searchTourismPlaces(query, nextPage, 20, undefined, contentType)
+    void searchTourismPlaces(query, nextPage, 20)
       .then((response) => {
         setResults((current) => [...current, ...response.items]);
         setTotalCount(response.total_count);
@@ -215,22 +203,6 @@ export default function SearchScreen() {
             <Feather color="#FFFFFF" name="x" size={14} />
           </Pressable>
         ) : null}
-      </View>
-
-      <View style={styles.typeSelector}>
-        {tourismTypeItems.map((item) => {
-          const isSelected = item.value === contentType;
-
-          return (
-            <Pressable
-              accessibilityState={{ selected: isSelected }}
-              key={item.value}
-              onPress={() => setContentType(item.value)}
-              style={[styles.typeChip, isSelected && styles.typeChipSelected]}>
-              <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>{item.label}</Text>
-            </Pressable>
-          );
-        })}
       </View>
 
       {showResults ? (

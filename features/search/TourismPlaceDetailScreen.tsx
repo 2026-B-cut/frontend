@@ -8,7 +8,6 @@ import { fetchMissions, type MissionItem } from '@/lib/mission-api';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
-  searchTourismEvents,
   TourismSearchApiError,
   type TourismMissionRecommendation,
   type TourismPlaceDetail,
@@ -117,8 +116,6 @@ function MissionRecommendationCard({
 function PlaceDetailPager({
   detail,
   events,
-  eventsError,
-  eventsLoading,
   availableMissions,
   onMissionPress,
   onSectionChange,
@@ -128,8 +125,6 @@ function PlaceDetailPager({
 }: {
   detail: TourismPlaceDetail;
   events: TourismPlaceSearchItem[];
-  eventsError: string | null;
-  eventsLoading: boolean;
   availableMissions: MissionItem[];
   onMissionPress: (mission: MissionItem | TourismMissionRecommendation) => void;
   onSectionChange: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -175,13 +170,13 @@ function PlaceDetailPager({
 
       <View onLayout={(event) => setSectionHeight(1, event)} style={[styles.detailSection, styles.eventSection]}>
         <Text style={styles.pagerSectionTitle}>같이 보면 좋은 <Text style={styles.sectionTitleAccent}>주변 행사</Text></Text>
-        {eventsLoading ? <ActivityIndicator color="#659AB3" style={styles.sectionLoader} /> : events.length > 0 ? (
+        {events.length > 0 ? (
           <View style={styles.eventList}>
             {events.map((event) => <TourismEventCard event={event} key={event.content_id} />)}
           </View>
         ) : (
           <View style={styles.emptySection}>
-            <Text style={styles.emptySectionText}>{eventsError || '현재 등록된 주변 행사가 없어요.'}</Text>
+            <Text style={styles.emptySectionText}>현재 등록된 주변 행사가 없어요.</Text>
           </View>
         )}
       </View>
@@ -210,9 +205,6 @@ export default function TourismPlaceDetailScreen() {
   const { contentId: contentIdParam } = useLocalSearchParams<{ contentId?: string | string[] }>();
   const contentId = Array.isArray(contentIdParam) ? contentIdParam[0] : contentIdParam;
   const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
-  const [events, setEvents] = useState<TourismPlaceSearchItem[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
-  const [eventsError, setEventsError] = useState<string | null>(null);
   const [availableMissions, setAvailableMissions] = useState<MissionItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
@@ -244,8 +236,6 @@ export default function TourismPlaceDetailScreen() {
 
     const controller = new AbortController();
     setDetail(null);
-    setEvents([]);
-    setEventsError(null);
     setAvailableMissions([]);
     setSectionHeights([]);
     setActiveSection(0);
@@ -285,29 +275,6 @@ export default function TourismPlaceDetailScreen() {
     return () => {
       isActive = false;
     };
-  }, [detail]);
-
-  useEffect(() => {
-    if (!detail) {
-      return;
-    }
-
-    const controller = new AbortController();
-    setEventsLoading(true);
-    setEventsError(null);
-
-    void searchTourismEvents(detail.title, controller.signal)
-      .then((response) => setEvents(response.items))
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'AbortError') {
-          return;
-        }
-
-        setEventsError('주변 행사 정보를 불러오지 못했어요.');
-      })
-      .finally(() => setEventsLoading(false));
-
-    return () => controller.abort();
   }, [detail]);
 
   const setSectionHeight = (index: number, event: LayoutChangeEvent) => {
@@ -405,9 +372,7 @@ export default function TourismPlaceDetailScreen() {
       {detail ? (
         <PlaceDetailPager
           detail={detail}
-          events={events}
-          eventsError={eventsError}
-          eventsLoading={eventsLoading}
+          events={detail.nearby_events ?? []}
           availableMissions={availableMissions}
           onMissionPress={openMissionDetail}
           onSectionChange={onSectionChange}

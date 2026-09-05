@@ -39,33 +39,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 22,
   },
-  typeSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 14,
-  },
-  typeChip: {
-    borderColor: '#D9E0E3',
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  typeChipSelected: {
-    backgroundColor: '#E5F2F8',
-    borderColor: '#74B1C9',
-  },
-  typeChipText: {
-    color: '#8A9194',
-    fontSize: 11,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  typeChipTextSelected: {
-    color: '#4C88A4',
-    fontWeight: '600',
-  },
   content: {
     paddingBottom: 40,
   },
@@ -564,9 +537,6 @@ export const styles = StyleSheet.create({
   },
   sectionTitleAccent: {
     color: '#4C88A4',
-  },
-  sectionLoader: {
-    marginTop: 42,
   },
   eventList: {
     gap: 14,

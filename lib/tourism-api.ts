@@ -1,18 +1,6 @@
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
 import { getLanguageHeaders } from '@/lib/language';
 
-export const TOURISM_TYPES = {
-  ATTRACTION: '12',
-  CULTURE: '14',
-  FESTIVAL: '15',
-  COURSE: '25',
-  LEISURE: '28',
-  ACCOMMODATION: '32',
-  SHOPPING: '38',
-} as const;
-
-export type TourismContentType = (typeof TOURISM_TYPES)[keyof typeof TOURISM_TYPES];
-
 export type TourismPlaceSearchItem = {
   content_id: string;
   content_type_id?: string | null;
@@ -67,6 +55,7 @@ export type TourismPlaceDetail = TourismPlaceSearchItem & {
   homepage_url?: string | null;
   overview?: string | null;
   pet?: TourismPetInformation | null;
+  nearby_events?: TourismPlaceSearchItem[] | null;
   recommended_missions: TourismMissionRecommendation[];
 };
 
@@ -127,7 +116,6 @@ export async function searchTourismPlaces(
   page = 1,
   pageSize = 20,
   signal?: AbortSignal,
-  contentType: TourismContentType = TOURISM_TYPES.ATTRACTION,
 ) {
   const trimmedKeyword = keyword.trim();
 
@@ -141,7 +129,6 @@ export async function searchTourismPlaces(
 
   const params = new URLSearchParams({
     keyword: trimmedKeyword,
-    content_type: contentType,
     page: String(page),
     page_size: String(Math.min(Math.max(pageSize, 1), 50)),
   });
@@ -151,10 +138,6 @@ export async function searchTourismPlaces(
   });
 
   return readTourismResponse<TourismSearchResponse>(response);
-}
-
-export async function searchTourismEvents(keyword: string, signal?: AbortSignal) {
-  return searchTourismPlaces(keyword, 1, 5, signal, TOURISM_TYPES.FESTIVAL);
 }
 
 export async function getTourismPlaceDetail(contentId: string, signal?: AbortSignal) {
