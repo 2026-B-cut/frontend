@@ -1,6 +1,6 @@
 // 일정 생성 화면에서 여행 날짜를 선택하는 캘린더 UI입니다.
 
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { GuardedPressable } from '@/components/guarded-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
@@ -38,22 +38,22 @@ export function TripCreateCalendar({
           {calendarMonth.year}년 {calendarMonth.month}월
         </Text>
         <View style={styles.monthButtons}>
-          <Pressable
+          <GuardedPressable
             accessibilityRole="button"
             accessibilityLabel="이전 달"
             disabled={!canGoPrevMonth}
             onPress={() => onChangeMonth(-1)}
             style={styles.monthButton}>
             <Text style={[styles.monthButtonText, !canGoPrevMonth && styles.disabledMonthButtonText]}>‹</Text>
-          </Pressable>
-          <Pressable
+          </GuardedPressable>
+          <GuardedPressable
             accessibilityRole="button"
             accessibilityLabel="다음 달"
             disabled={!canGoNextMonth}
             onPress={() => onChangeMonth(1)}
             style={styles.monthButton}>
             <Text style={[styles.monthButtonText, !canGoNextMonth && styles.disabledMonthButtonText]}>›</Text>
-          </Pressable>
+          </GuardedPressable>
         </View>
       </View>
 

@@ -1,6 +1,8 @@
-import { Modal, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { Circle, Defs, Mask, Rect, Svg } from 'react-native-svg';
 import { useMemo, useState } from 'react';
+
+import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 
 export type TutorialTarget = {
   height: number;

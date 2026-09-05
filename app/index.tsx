@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
+import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
   clearAuthSession,
