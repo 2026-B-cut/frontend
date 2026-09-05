@@ -34,22 +34,20 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
   };
 
   const handleDeleteAccount = () => {
-    confirmAction('계정 탈퇴', '계정을 탈퇴하면 프로필과 서비스 이용 정보가 삭제됩니다. 계속할까요?', () => {
-      void (async () => {
-        setIsAccountActionInProgress(true);
-        try {
-          await deleteCurrentAccount();
-          if (email) {
-            markDeletedAccountEmail(email);
-          }
-          onSignedOut();
-        } catch (error) {
-          showActionError('탈퇴 실패', error instanceof Error ? error.message : '계정 탈퇴에 실패했습니다.');
-        } finally {
-          setIsAccountActionInProgress(false);
+    void (async () => {
+      setIsAccountActionInProgress(true);
+      try {
+        await deleteCurrentAccount();
+        if (email) {
+          markDeletedAccountEmail(email);
         }
-      })();
-    });
+        onSignedOut();
+      } catch (error) {
+        showActionError('탈퇴 실패', error instanceof Error ? error.message : '계정 탈퇴에 실패했습니다.');
+      } finally {
+        setIsAccountActionInProgress(false);
+      }
+    })();
   };
 
   useEffect(() => {

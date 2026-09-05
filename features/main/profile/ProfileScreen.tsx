@@ -7,6 +7,7 @@ import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 import { ProfileHeader } from './components/profile-header';
+import { ProfileDeleteAccountModal } from './components/profile-delete-account-modal';
 import { ProfileLanguageModal } from './components/profile-language-modal';
 import { ProfileMenu } from './components/profile-menu';
 import { useProfileScreen } from './hooks/use-profile-screen';
@@ -16,6 +17,7 @@ export default function ProfileScreen() {
   const { contentMaxWidth, horizontalPadding, topInset } = useResponsiveLayout();
   const { language, setLanguage } = useLanguage();
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
+  const [isDeleteAccountModalVisible, setIsDeleteAccountModalVisible] = useState(false);
   const [isSavingLanguage, setIsSavingLanguage] = useState(false);
   const profile = useProfileScreen({ onSignedOut: () => router.replace('/login') });
 
@@ -55,11 +57,21 @@ export default function ProfileScreen() {
         visible={isLanguageModalVisible}
       />
 
+      <ProfileDeleteAccountModal
+        isSubmitting={profile.isAccountActionInProgress}
+        onClose={() => setIsDeleteAccountModalVisible(false)}
+        onConfirm={() => {
+          setIsDeleteAccountModalVisible(false);
+          profile.handleDeleteAccount();
+        }}
+        visible={isDeleteAccountModalVisible}
+      />
+
       <ProfileMenu
         contentMaxWidth={contentMaxWidth}
         horizontalPadding={horizontalPadding}
         isAccountActionInProgress={profile.isAccountActionInProgress}
-        onDeleteAccount={profile.handleDeleteAccount}
+        onDeleteAccount={() => setIsDeleteAccountModalVisible(true)}
         onLogout={profile.handleLogout}
         onOpenNotifications={() => router.push('/main/notifications')}
         onOpenPrivacySecurity={() => router.push('/main/privacy-security')}

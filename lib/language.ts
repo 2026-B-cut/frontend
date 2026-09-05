@@ -35,6 +35,19 @@ const translations: Record<string, string> = {
   '비밀번호가 변경되었어요. 새 비밀번호로 로그인해 주세요.':
     'Your password has been changed. Please log in with your new password.',
   '계정 탈퇴': 'Delete account',
+  '정말 탈퇴하시겠어요?': 'Are you sure you want to delete your account?',
+  '계정을 탈퇴하면 아래 데이터가 영구적으로 삭제되며,\n삭제된 데이터는 복구할 수 없습니다.':
+    'The following data will be permanently deleted when you delete your account.\nDeleted data cannot be recovered.',
+  '삭제되는 데이터': 'Data that will be deleted',
+  '프로필 및 계정 정보': 'Profile and account information',
+  '촬영한 미션 인증 사진': 'Mission verification photos',
+  '미션 수행 기록 및 매거진': 'Mission history and magazines',
+  '카카오 연동 정보(연동 로그인 시)': 'Kakao connection information (for Kakao login)',
+  '단, 관련 법령에 따라 보존이 필요한 정보는\n일정 기간 보관될 수 있습니다.':
+    'Information that must be retained by law may be stored\nfor a certain period.',
+  '위 내용을 확인했으며, 탈퇴에 동의합니다.': 'I have read the above and agree to delete my account.',
+  '탈퇴하기': 'Delete account',
+  '처리 중': 'Processing',
   '개 미션으로 매거진 만들기': ' missions',
   '삭제': 'Delete',
   '날짜 미정': 'Date not set',
