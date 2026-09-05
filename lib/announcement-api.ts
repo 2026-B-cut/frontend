@@ -39,6 +39,39 @@ export type AnnouncementReadResponse = {
   readAt: string;
 };
 
+export type AnnouncementAdmin = {
+  id: number;
+  title: string;
+  content: string;
+  isPublished: boolean;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  imageUrl: string | null;
+  linkUrl: string | null;
+  priority: number;
+  createdBy: number | null;
+};
+
+export type AnnouncementAdminListResponse = {
+  items: AnnouncementAdmin[];
+  page: number;
+  limit: number;
+  totalCount: number;
+  hasNext: boolean;
+};
+
+export type AnnouncementCreateInput = {
+  title: string;
+  content: string;
+  isPublished?: boolean;
+  imageUrl?: string | null;
+  linkUrl?: string | null;
+  priority?: number;
+};
+
+export type AnnouncementUpdateInput = Partial<AnnouncementCreateInput>;
+
 async function request<T>(path: string, init?: RequestInit) {
   const response = await fetchWithAuth(`${API_BASE_URL}${path}`, {
     ...init,
@@ -74,4 +107,37 @@ export function getAnnouncement(id: number, signal?: AbortSignal) {
 
 export function markAnnouncementRead(id: number) {
   return request<AnnouncementReadResponse>(`/announcements/${id}/read`, { method: 'POST' });
+}
+
+export function getAdminAnnouncements(page = 1, limit = 20, signal?: AbortSignal) {
+  const params = new URLSearchParams({ page: String(page), limit: String(Math.min(Math.max(limit, 1), 100)) });
+  return request<AnnouncementAdminListResponse>(`/admin/announcements?${params.toString()}`, { signal });
+}
+
+export function createAdminAnnouncement(input: AnnouncementCreateInput) {
+  return request<AnnouncementAdmin>('/admin/announcements', {
+    body: JSON.stringify(input),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
+}
+
+export function updateAdminAnnouncement(id: number, input: AnnouncementUpdateInput) {
+  return request<AnnouncementAdmin>(`/admin/announcements/${id}`, {
+    body: JSON.stringify(input),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
+  });
+}
+
+export function deleteAdminAnnouncement(id: number) {
+  return request<Record<string, never>>(`/admin/announcements/${id}`, { method: 'DELETE' });
+}
+
+export function publishAdminAnnouncement(id: number, isPublished: boolean) {
+  return request<AnnouncementAdmin>(`/admin/announcements/${id}/publish`, {
+    body: JSON.stringify({ isPublished }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
+  });
 }
