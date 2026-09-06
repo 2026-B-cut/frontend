@@ -74,9 +74,7 @@ export default function TermsDetailScreen() {
         bounces={false}
         contentContainerStyle={{ paddingBottom: bottomSafeInset + 38, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset }}
         showsVerticalScrollIndicator={false}>
-        <TopBar onBack={() => router.back()} title="" />
-
-        <TextBlock style={styles.title}>{pageTitle}</TextBlock>
+        <TopBar onBack={() => router.back()} title={pageTitle} />
 
         {isLoading ? (
           <View style={styles.loadingState}>
@@ -107,22 +105,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     flex: 1,
-  },
-  backButton: {
-    alignItems: 'center',
-    height: 35,
-    justifyContent: 'center',
-    marginLeft: -8,
-    width: 35,
-  },
-  title: {
-    color: '#10161F',
-    fontSize: 24,
-    fontWeight: '600',
-    letterSpacing: -0.8,
-    lineHeight: 35,
-    marginTop: 39,
-    marginBottom: 20,
   },
   content: {
     color: '#9EA5A9',
