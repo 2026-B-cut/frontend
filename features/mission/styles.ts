@@ -26,10 +26,11 @@ export const styles = StyleSheet.create({
     lineHeight: 48,
   },
   title: {
-    color: '#000000',
-    fontSize: 18,
+    color: '#10161F',
+    fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
+    marginTop: 20,
   },
   themeRow: {
     flexDirection: 'row',

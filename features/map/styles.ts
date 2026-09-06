@@ -8,9 +8,10 @@ export const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     flexDirection: 'row',
-    height: 44,
+    height: 48,
     justifyContent: 'space-between',
     marginBottom: 48,
+    width: '100%',
   },
   backButton: {
     alignItems: 'flex-start',

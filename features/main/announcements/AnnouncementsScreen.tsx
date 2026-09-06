@@ -55,7 +55,7 @@ export default function AnnouncementsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.listHeader, { marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }]}>
+      <View style={{ marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }}>
         <TopBar onBack={() => router.back()} title="공지사항" />
       </View>
 

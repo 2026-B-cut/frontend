@@ -6,7 +6,6 @@ export const styles = StyleSheet.create({
   backButton: { alignItems: 'center', height: 44, justifyContent: 'center', width: 44 },
   headerTitle: { color: '#10161F', fontSize: 16, fontWeight: '600' },
   headerSpacer: { width: 44 },
-  listHeader: { marginTop: 18 },
   listContent: { flexGrow: 1, paddingTop: 22 },
   item: { borderBottomColor: '#E7ECEE', borderBottomWidth: 1, paddingVertical: 19 },
   itemHeader: { alignItems: 'center', flexDirection: 'row' },

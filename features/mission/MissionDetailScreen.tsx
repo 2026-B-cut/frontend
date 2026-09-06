@@ -74,7 +74,8 @@ export default function MissionDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.inner, { maxWidth: contentMaxWidth }]}>
-          <TopBar onBack={() => router.back()} title="미션 상세 리스트" />
+          <TopBar onBack={() => router.back()} title="" />
+          <Text style={styles.title}>미션 상세 리스트</Text>
 
           <MissionThemeSelector selectedTheme={selectedTheme} onSelectTheme={setSelectedTheme} />
 
