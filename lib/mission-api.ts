@@ -46,29 +46,9 @@ function getString(item: MissionApiItem, keys: string[]) {
   return '';
 }
 
-function getLastAddressPart(value: unknown): string {
-  if (Array.isArray(value)) {
-    return value.map(getLastAddressPart).filter(Boolean).pop() ?? '';
-  }
-
-  if (typeof value === 'number') {
-    return String(value);
-  }
-
-  if (typeof value !== 'string') {
-    return '';
-  }
-
-  return value
-    .split(/\s*[·,]\s*/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .pop() ?? '';
-}
-
-function getLastAddress(item: MissionApiItem, keys: string[]) {
+function getAddress(item: MissionApiItem, keys: string[]) {
   for (const key of keys) {
-    const value = getLastAddressPart(item[key]);
+    const value = getString(item, [key]);
 
     if (value) {
       return value;
@@ -100,8 +80,9 @@ function toMissionItem(item: MissionApiItem, index: number): MissionItem {
   const id = getString(item, ['id', 'mission_id', 'missionId']) || code || `mission-${index}`;
   const district = getString(item, ['district_label', 'districtLabel', 'district', 'district_name', 'districtName', 'gu']);
   const districtCode = getString(item, ['district_code', 'districtCode']);
-  const place = getLastAddress(item, ['place', 'place_name', 'placeName', 'location', 'address']);
-  const location = place || district || '부산';
+  const address = getAddress(item, ['address', 'detail_address', 'detailAddress']);
+  const place = getString(item, ['place_label', 'placeLabel', 'place', 'place_name', 'placeName', 'location']);
+  const location = address || place || district || '부산';
   const photoUrl = getString(item, ['target_photo_url', 'photo_url', 'photoUrl', 'image_url', 'imageUrl']);
   const emojiUrl = getString(item, ['emoji_url', 'emojiUrl', 'mission_emoji_url', 'missionEmojiUrl']);
 
