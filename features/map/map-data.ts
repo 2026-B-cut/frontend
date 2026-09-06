@@ -82,14 +82,14 @@ const districtTouchAdjustments: Record<number, DistrictTouchAdjustment> = {
   4: { moveX: 0.15, moveY: 0.15, scale: 1 / 2 }, // 북구: 좌측으로 조금, 살짝 위
   5: { moveX: -0.1, scale: 3 / 4 }, // 금정구: 3/4, 좌측으로 조금
   6: { moveX: -0.15, moveY: -0.15, scale: 3 / 4 }, // 동래구: 3/4, 약간 좌측 위
-  7: { moveX: -0.2, moveY: -0.1, scale: 0.8 }, // 연제구: 0.8배, 살짝 왼쪽
+  7: { moveX: -0.1, moveY: -0.2, scale: 0.8 }, // 연제구: 0.8배, 우측 위
   8: { moveX: 0.25, moveY: -0.25, scale: 1 / 2 }, // 부산진구: 1/2, 우측 위
   9: { moveX: 0.15, moveY: -0.5, scale: 0.26 }, // 서구: 기존 크기의 1.3배, 살짝 좌측
-  11: { moveX: -0.35, moveY: -0.35, scale: 0.8 }, // 중구: 0.8배, 좌측으로 조금
+  11: { moveX: -0.35, moveY: -0.45, scale: 0.8 }, // 중구: 0.8배, 살짝 위
   12: { moveY: -0.1, scale: 1 / 2 }, // 수영구: 1/2, 조금 위
-  13: { moveY: -0.35, scale: 1 / 2 }, // 남구: 1/2, 살짝 위
-  14: { moveX: -0.05, moveY: -0.65, scale: 1 / 4 }, // 영도구: 1/4, 위로 추가 이동하고 살짝 좌측
-  15: { moveX: -0.35, moveY: -0.15, scaleX: 1 / 3, scaleY: 1 / 2 }, // 해운대구: 세로가 더 긴 1/3 크기, 좌측 위
+  13: { moveY: -0.35, scaleX: 0.4, scaleY: 0.7 }, // 남구: 세로가 더 긴 사각형, 살짝 위
+  14: { moveX: 0.05, moveY: -0.75, scale: 1 / 4 }, // 영도구: 1/4, 우측 위로 조금
+  15: { moveX: -0.25, moveY: -0.15, scaleX: 1 / 3, scaleY: 1 / 2 }, // 해운대구: 세로가 더 긴 1/3 크기, 우측으로 조금
   16: { moveX: -0.15, scale: 3 / 4 }, // 기장군: 3/4, 살짝 좌측
 };
 
@@ -131,9 +131,9 @@ export const districtTouchPolygons: Record<number, string> = Object.fromEntries(
 ) as Record<number, string>;
 
 export const DEFAULT_THEME_DISTRICTS: Record<MissionTheme, string[]> = {
-  MOUNTAIN: ['GANGSEO', 'SAHA', 'BUK', 'GEUMJEONG', 'BUSANJIN', 'NAM'],
-  SEA: ['GIJANG', 'HAEUNDAE', 'SUYEONG', 'YEONGDO', 'SEO', 'SAHA'],
-  CITY: ['GANGSEO', 'BUK', 'DONGNAE', 'YEONJE', 'NAM', 'JUNG'],
+  MOUNTAIN: ['DONGNAE', 'SAHA', 'BUK', 'GEUMJEONG', 'BUSANJIN', 'NAM'],
+  SEA: ['GIJANG', 'HAEUNDAE', 'SUYEONG', 'YEONGDO', 'SEO', 'SAHA', 'JUNG'],
+  CITY: ['GANGSEO', 'BUK', 'DONGNAE', 'YEONJE', 'NAM', 'JUNG', 'BUSANJIN', 'SAHA'],
 };
 
 export const MAP_ASPECT_RATIO = 1;

@@ -29,12 +29,12 @@ export const styles = StyleSheet.create({
     color: '#10161F',
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 18,
     marginTop: 20,
   },
   themeRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
     marginBottom: 24,
     width: '100%',
   },
@@ -47,8 +47,8 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   selectedThemeCard: {
-    borderColor: '#2B2F33',
-    borderWidth: 1,
+    borderColor: '#409CB7',
+    borderWidth: 3,
   },
   themeIcon: {
     height: 40,
