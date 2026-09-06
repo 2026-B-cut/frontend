@@ -72,9 +72,11 @@ export default function TermsDetailScreen() {
       </Svg>
       <ScrollView
         bounces={false}
-        contentContainerStyle={{ paddingBottom: bottomSafeInset + 38, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset }}
+        contentContainerStyle={{ paddingBottom: bottomSafeInset + 38, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset + 32 }}
         showsVerticalScrollIndicator={false}>
-        <TopBar onBack={() => router.back()} title={pageTitle} />
+        <TopBar onBack={() => router.back()} title="" />
+
+        <TextBlock style={styles.title}>{pageTitle}</TextBlock>
 
         {isLoading ? (
           <View style={styles.loadingState}>
@@ -105,6 +107,15 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     flex: 1,
+  },
+  title: {
+    color: '#10161F',
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: -0.8,
+    lineHeight: 35,
+    marginBottom: 20,
+    marginTop: 39,
   },
   content: {
     color: '#9EA5A9',
