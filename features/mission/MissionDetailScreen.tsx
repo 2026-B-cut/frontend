@@ -3,7 +3,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { LocalizedText as Text } from '@/components/localized-text';
-import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import type { MissionItem } from '@/lib/mission-api';
@@ -74,11 +74,7 @@ export default function MissionDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.inner, { maxWidth: contentMaxWidth }]}>
-          <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
-            <Text style={styles.backIcon}>‹</Text>
-          </ScalePressable>
-
-          <Text style={styles.title}>미션 상세 리스트</Text>
+          <TopBar onBack={() => router.back()} title="미션 상세 리스트" />
 
           <MissionThemeSelector selectedTheme={selectedTheme} onSelectTheme={setSelectedTheme} />
 

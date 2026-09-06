@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useTutorialTarget } from '@/components/tutorial-provider';
 import { ScheduleCard } from '@/features/trip/hub/components/schedule-card';
 import { styles } from '@/features/trip/hub/trip-hub-styles';
@@ -64,13 +65,7 @@ export function TripHubContent({
 
   return (
     <View style={[styles.container, { paddingHorizontal: horizontalPadding, paddingTop: topInset }]}>
-      <View style={styles.topBar}>
-        <Pressable accessibilityLabel="뒤로 가기" onPress={onGoBack} style={styles.backButton}>
-          <Text style={styles.backIcon}>‹</Text>
-        </Pressable>
-        <Text style={styles.topTitle}>일정 관리</Text>
-        <View style={styles.topSpacer} />
-      </View>
+      <TopBar onBack={onGoBack} title="일정 관리" />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomActionInset + 28 }]} keyboardShouldPersistTaps="handled" removeClippedSubviews={false} scrollEnabled={!isEditing} showsVerticalScrollIndicator={false} style={styles.scrollArea}>
         <View style={styles.createCard}>

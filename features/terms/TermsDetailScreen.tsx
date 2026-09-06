@@ -1,11 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 import type { ReactNode } from 'react';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
-import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { fetchLegalDocuments, getCachedLegalDocument, type LegalDocument, type LegalDocumentType } from '@/lib/auth-api';
 
@@ -73,11 +72,9 @@ export default function TermsDetailScreen() {
       </Svg>
       <ScrollView
         bounces={false}
-        contentContainerStyle={{ paddingBottom: bottomSafeInset + 38, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset + 32 }}
+        contentContainerStyle={{ paddingBottom: bottomSafeInset + 38, paddingHorizontal: horizontalPadding, paddingTop: topSafeInset }}
         showsVerticalScrollIndicator={false}>
-        <ScalePressable accessibilityLabel="뒤로 가기" hitSlop={12} onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons color="#10161F" name="chevron-back" size={29} />
-        </ScalePressable>
+        <TopBar onBack={() => router.back()} title="" />
 
         <TextBlock style={styles.title}>{pageTitle}</TextBlock>
 

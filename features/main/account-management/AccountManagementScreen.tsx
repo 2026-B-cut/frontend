@@ -1,10 +1,9 @@
 // 로그인 계정과 활동 정보를 확인하는 계정 관리 화면입니다.
 import { router } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScrollView, View } from 'react-native';
 
 import { LocalizedText as Text } from '@/components/localized-text';
-import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
 import { ProfileAccountSummary } from '../profile/components/profile-account-summary';
@@ -21,12 +20,8 @@ export default function AccountManagementScreen() {
       showsVerticalScrollIndicator={false}
       style={styles.accountPageContainer}>
       <View style={[styles.accountPageHeader, { paddingHorizontal: horizontalPadding, paddingTop: topInset }]}>
-        <View style={[styles.header, { maxWidth: contentMaxWidth }]}> 
-          <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.iconButton}>
-            <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
-          </ScalePressable>
-          <Text style={styles.headerTitle}>계정 관리</Text>
-          <View style={styles.iconButton} />
+        <View style={{ maxWidth: contentMaxWidth, width: '100%' }}>
+          <TopBar onBack={() => router.back()} title="계정 관리" />
         </View>
       </View>
 

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { translateText } from '@/lib/language';
 import { getNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from '@/lib/notification-api';
@@ -219,13 +220,7 @@ export default function NotificationsScreen() {
         contentContainerStyle={{ paddingBottom: bottomActionInset + 28, paddingHorizontal: horizontalPadding, paddingTop: topInset }}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.inner, { maxWidth: contentMaxWidth }]}>
-          <View style={styles.header}>
-            <ScalePressable accessibilityLabel={translateText('뒤로 가기')} onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
-              <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
-            </ScalePressable>
-            <Text style={styles.headerTitle}>알림 설정</Text>
-            <View style={styles.headerSpacer} />
-          </View>
+          <TopBar onBack={() => router.back()} title="알림 설정" />
 
           <View style={styles.body}>
             <View style={styles.masterCard}>

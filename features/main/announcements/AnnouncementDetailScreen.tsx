@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,6 +6,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { getAnnouncement, markAnnouncementRead, normalizeAnnouncementAssetUrl, type AnnouncementDetail } from '@/lib/announcement-api';
 
@@ -51,11 +51,7 @@ export default function AnnouncementDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }]}>
-        <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
-          <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
-        </ScalePressable>
-        <Text style={styles.headerTitle}>공지사항</Text>
-        <View style={styles.headerSpacer} />
+        <TopBar onBack={() => router.back()} title="공지사항" />
       </View>
 
       {announcement ? (

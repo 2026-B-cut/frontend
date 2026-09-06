@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, ScrollView, 
 
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
   createAdminAnnouncement,
@@ -161,11 +162,7 @@ export default function AdminAnnouncementsScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }]}>
-        <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
-          <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
-        </ScalePressable>
-        <Text style={styles.headerTitle}>운영자 공지 관리</Text>
-        <View style={styles.headerSpacer} />
+        <TopBar onBack={() => router.back()} title="운영자 공지 관리" />
       </View>
 
       {isLoading || isAdminAuthorized === null ? <ActivityIndicator color="#74B1C9" style={styles.message} /> : !isAdminAuthorized ? (

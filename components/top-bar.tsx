@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
@@ -6,11 +7,12 @@ import { LocalizedText as Text } from '@/components/localized-text';
 
 type TopBarProps = {
   onBack?: () => void;
+  rightContent?: ReactNode;
   title: string;
   titleNumberOfLines?: number;
 };
 
-export function TopBar({ onBack, title, titleNumberOfLines = 1 }: TopBarProps) {
+export function TopBar({ onBack, rightContent, title, titleNumberOfLines = 1 }: TopBarProps) {
   const handleBack = onBack ?? (() => router.back());
 
   return (
@@ -19,7 +21,7 @@ export function TopBar({ onBack, title, titleNumberOfLines = 1 }: TopBarProps) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
       <Text numberOfLines={titleNumberOfLines} style={styles.title}>{title}</Text>
-      <View style={styles.spacer} />
+      {rightContent ? <View style={styles.rightSlot}>{rightContent}</View> : <View style={styles.spacer} />}
     </View>
   );
 }
@@ -50,6 +52,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   spacer: {
+    width: 48,
+  },
+  rightSlot: {
+    alignItems: 'flex-end',
     width: 48,
   },
 });

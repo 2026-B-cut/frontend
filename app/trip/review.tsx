@@ -5,6 +5,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } f
 import { LocalizedText as Text, LocalizedTextInput as TextInput } from '@/components/localized-text';
 
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { MissionFailureView } from '@/features/trip/review/components/mission-failure-view';
 import { useMissionReview } from '@/features/trip/review/hooks/use-mission-review';
 import { getUserLabel } from '@/features/trip/review/mission-review-data';
@@ -50,14 +51,16 @@ export default function MissionReviewScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <View style={[styles.header, { paddingHorizontal: horizontalPadding, paddingTop: topSafeInset + 26 }]}>
-        <ScalePressable accessibilityLabel="돌아가기" onPress={goBackToTrip} pressedScale={0.86} style={styles.backButton}>
-          <Ionicons color="#121820" name="chevron-back" size={25} />
-        </ScalePressable>
-        <Text numberOfLines={1} style={styles.title}>{session?.missionTitle ?? '미션'}</Text>
-        <ScalePressable accessibilityLabel="다음" onPress={goNext} pressedScale={0.9} style={styles.doneButton}>
-          <Image source={nextArrowIcon} style={styles.nextArrowIcon} contentFit="contain" />
-        </ScalePressable>
+      <View style={{ paddingHorizontal: horizontalPadding, paddingTop: topSafeInset }}>
+        <TopBar
+          onBack={goBackToTrip}
+          rightContent={(
+            <ScalePressable accessibilityLabel="다음" onPress={goNext} pressedScale={0.9} style={[styles.doneButton, { width: 48 }]}>
+              <Image source={nextArrowIcon} style={styles.nextArrowIcon} contentFit="contain" />
+            </ScalePressable>
+          )}
+          title={session?.missionTitle ?? '미션'}
+        />
       </View>
 
       {isLoading && !session ? (

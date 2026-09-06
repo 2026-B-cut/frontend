@@ -6,6 +6,7 @@ import { GuardedPressable as Pressable } from '@/components/guarded-pressable';
 import { LocalizedText as Text } from '@/components/localized-text';
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { ScalePressable } from '@/components/scale-pressable';
+import { TopBar } from '@/components/top-bar';
 import { useTutorialTarget } from '@/components/tutorial-provider';
 
 import { styles } from '../styles';
@@ -37,14 +38,16 @@ export function ProfileHeader({
 
   return (
     <View style={[styles.profileSection, { paddingHorizontal: horizontalPadding, paddingTop: topInset }]}>
-      <View style={[styles.header, { maxWidth: contentMaxWidth }]}>
-        <ScalePressable accessibilityLabel="뒤로 가기" onPress={onBack} pressedScale={0.86} style={styles.iconButton}>
-          <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
-        </ScalePressable>
-        <Text style={styles.headerTitle}>프로필 편집</Text>
-        <ScalePressable accessibilityLabel="설정" onPress={onOpenSettings} pressedScale={0.9} style={styles.iconButton}>
-          <MaterialCommunityIcons color="#141820" name="cog-outline" size={25} />
-        </ScalePressable>
+      <View style={{ maxWidth: contentMaxWidth, width: '100%' }}>
+        <TopBar
+          onBack={onBack}
+          rightContent={(
+            <ScalePressable accessibilityLabel="설정" onPress={onOpenSettings} pressedScale={0.9} style={styles.iconButton}>
+              <MaterialCommunityIcons color="#141820" name="cog-outline" size={25} />
+            </ScalePressable>
+          )}
+          title="프로필 편집"
+        />
       </View>
 
       <View style={styles.profileInfo}>
