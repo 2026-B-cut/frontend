@@ -43,6 +43,7 @@ export default function AdminAnnouncementsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean | null>(null);
   const [editing, setEditing] = useState<AnnouncementAdmin | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -55,13 +56,24 @@ export default function AdminAnnouncementsScreen() {
 
     try {
       const response = await getAdminAnnouncements(nextPage);
+      setIsAdminAuthorized(true);
       setItems((current) => (nextPage === 1 ? response.items : [...current, ...response.items]));
       setTotalCount(response.totalCount);
       setPage(response.page);
       setHasNext(response.hasNext);
       setErrorMessage(null);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '운영자 공지사항을 불러오지 못했어요.');
+      const status = error && typeof error === 'object' && 'status' in error
+        ? Number((error as { status?: unknown }).status)
+        : undefined;
+
+      setIsAdminAuthorized(false);
+      setItems([]);
+      setErrorMessage(status === 401 || status === 403
+        ? '운영자 권한이 없습니다.'
+        : error instanceof Error
+          ? error.message
+          : '운영자 공지사항을 불러오지 못했어요.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -156,7 +168,12 @@ export default function AdminAnnouncementsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {isLoading ? <ActivityIndicator color="#74B1C9" style={styles.message} /> : (
+      {isLoading || isAdminAuthorized === null ? <ActivityIndicator color="#74B1C9" style={styles.message} /> : !isAdminAuthorized ? (
+        <View style={styles.permissionState}>
+          <Text style={styles.permissionTitle}>운영자 권한이 필요해요.</Text>
+          <Text style={styles.permissionMessage}>일반 계정은 운영자 공지 관리 화면을 사용할 수 없습니다.</Text>
+        </View>
+      ) : (
         <FlatList
           contentContainerStyle={[styles.content, { paddingBottom: bottomActionInset + 28, paddingHorizontal: horizontalPadding }]}
           data={items}

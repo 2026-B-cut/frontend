@@ -55,7 +55,7 @@ export default function AnnouncementsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }]}>
+      <View style={[styles.header, styles.listHeader, { marginHorizontal: horizontalPadding, maxWidth: contentMaxWidth, paddingTop: topInset }]}>
         <ScalePressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} pressedScale={0.86} style={styles.backButton}>
           <MaterialCommunityIcons color="#141820" name="chevron-left" size={36} />
         </ScalePressable>
@@ -70,7 +70,11 @@ export default function AnnouncementsScreen() {
           contentContainerStyle={[styles.listContent, { paddingBottom: bottomActionInset + 28, paddingHorizontal: horizontalPadding }]}
           data={items}
           keyExtractor={(item) => String(item.id)}
-          ListEmptyComponent={<Text style={styles.message}>{errorMessage || '등록된 공지사항이 없어요.'}</Text>}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyMessage}>{errorMessage || '등록된 공지사항이 없어요.'}</Text>
+            </View>
+          }
           ListFooterComponent={isLoadingMore ? <ActivityIndicator color="#74B1C9" style={styles.loadingMore} /> : null}
           onEndReached={() => {
             if (!isLoadingMore && hasNext) {
