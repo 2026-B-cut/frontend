@@ -1,5 +1,5 @@
 import { API_BASE_URL, fetchWithAuth } from '@/lib/auth-api';
-import { getLanguageHeaders } from '@/lib/language';
+import { getCurrentLanguage, getLanguageHeaders } from '@/lib/language';
 
 export type TourismPlaceSearchItem = {
   content_id: string;
@@ -83,6 +83,26 @@ export class TourismSearchApiError extends Error {
   }
 }
 
+const SEARCH_CACHE_TTL_MS = 60_000;
+const DETAIL_CACHE_TTL_MS = 5 * 60_000;
+const searchCache = new Map<string, { expiresAt: number; response: TourismSearchResponse }>();
+const detailCache = new Map<string, { expiresAt: number; response: TourismPlaceDetail }>();
+
+function readCache<T>(cache: Map<string, { expiresAt: number; response: T }>, key: string) {
+  const entry = cache.get(key);
+
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.expiresAt <= Date.now()) {
+    cache.delete(key);
+    return null;
+  }
+
+  return entry.response;
+}
+
 function getErrorMessage(data: unknown) {
   if (typeof data === 'string' && data.trim()) {
     return data;
@@ -151,12 +171,21 @@ export async function searchTourismPlaces(
     page: String(page),
     page_size: String(Math.min(Math.max(pageSize, 1), 50)),
   });
+  const cacheKey = `${getCurrentLanguage()}:${params.toString()}`;
+  const cachedResponse = readCache(searchCache, cacheKey);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
   const response = await fetchWithAuth(`${API_BASE_URL}/tourism/search?${params.toString()}`, {
     headers: getLanguageHeaders(),
     signal,
   });
 
-  return readTourismResponse<TourismSearchResponse>(response);
+  const result = await readTourismResponse<TourismSearchResponse>(response);
+  searchCache.set(cacheKey, { expiresAt: Date.now() + SEARCH_CACHE_TTL_MS, response: result });
+  return result;
 }
 
 export async function getRecentTourismSearches(signal?: AbortSignal) {
@@ -178,10 +207,19 @@ export async function getRecommendedTourismKeywords(signal?: AbortSignal) {
 }
 
 export async function getTourismPlaceDetail(contentId: string, signal?: AbortSignal) {
+  const cacheKey = `${getCurrentLanguage()}:${contentId}`;
+  const cachedResponse = readCache(detailCache, cacheKey);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
   const response = await fetchWithAuth(`${API_BASE_URL}/tourism/places/${encodeURIComponent(contentId)}`, {
     headers: getLanguageHeaders(),
     signal,
   });
 
-  return readTourismResponse<TourismPlaceDetail>(response);
+  const result = await readTourismResponse<TourismPlaceDetail>(response);
+  detailCache.set(cacheKey, { expiresAt: Date.now() + DETAIL_CACHE_TTL_MS, response: result });
+  return result;
 }

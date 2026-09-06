@@ -44,7 +44,7 @@ function TourismResultCard({ place, onPress }: { place: TourismPlaceSearchItem; 
           <Text style={styles.resultTitle}>{place.title}</Text>
           <Text style={styles.resultLocation}>{getLocation(place)}</Text>
         </View>
-        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.resultImage} /> : <View style={styles.resultImagePlaceholder} />}
+        {imageUrl ? <Image cachePolicy="memory-disk" contentFit="cover" source={{ uri: imageUrl }} style={styles.resultImage} /> : <View style={styles.resultImagePlaceholder} />}
       </View>
 
       <Text style={styles.resultDescription}>
@@ -205,7 +205,13 @@ export default function SearchScreen() {
   const openPlaceDetail = (place: TourismPlaceSearchItem) => {
     router.push({
       pathname: '/search-detail',
-      params: { contentId: place.content_id },
+      params: {
+        address: place.address ?? place.detail_address ?? '',
+        contentId: place.content_id,
+        imageUrl: place.image_url ?? '',
+        thumbnailUrl: place.thumbnail_url ?? '',
+        title: place.title,
+      },
     } as never);
   };
 

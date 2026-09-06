@@ -4,7 +4,7 @@ import { MissionCard } from '@/components/mission-card';
 import { TopBar } from '@/components/top-bar';
 import { MISSION_FRAME_ASPECT_RATIO } from '@/features/map/map-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import { fetchMissions, type MissionItem } from '@/lib/mission-api';
+import type { MissionItem } from '@/lib/mission-api';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
@@ -16,7 +16,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -66,7 +66,7 @@ function TourismEventCard({ event }: { event: TourismPlaceSearchItem }) {
     <View style={styles.eventCard}>
       <View style={styles.eventCardHeader}>
         <Text style={styles.eventTitle}>{event.title}</Text>
-        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.eventImage} /> : null}
+        {imageUrl ? <Image cachePolicy="memory-disk" contentFit="cover" source={{ uri: imageUrl }} style={styles.eventImage} /> : null}
       </View>
       <EventInfoRow icon="map-marker-outline">{getLocation(event)}</EventInfoRow>
       {event.phone ? <EventInfoRow icon="phone-outline">{event.phone}</EventInfoRow> : null}
@@ -116,7 +116,6 @@ function MissionRecommendationCard({
 function PlaceDetailPager({
   detail,
   events,
-  availableMissions,
   onMissionPress,
   onSectionChange,
   scrollRef,
@@ -125,7 +124,6 @@ function PlaceDetailPager({
 }: {
   detail: TourismPlaceDetail;
   events: TourismPlaceSearchItem[];
-  availableMissions: MissionItem[];
   onMissionPress: (mission: MissionItem | TourismMissionRecommendation) => void;
   onSectionChange: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   scrollRef: React.RefObject<ScrollView | null>;
@@ -134,13 +132,7 @@ function PlaceDetailPager({
 }) {
   const imageUrl = getImageUrl(detail.image_url || detail.thumbnail_url);
   const tags = Array.from(new Set(detail.recommended_missions.flatMap((mission) => mission.match_reasons))).slice(0, 4);
-  const districtCode = detail.district_code?.trim().toUpperCase();
-  const placeMissions = districtCode
-    ? availableMissions.filter((mission) => mission.districtCode?.trim().toUpperCase() === districtCode)
-    : availableMissions;
-  const missionsByCode = new Map(availableMissions.filter((mission) => mission.code).map((mission) => [mission.code?.trim().toUpperCase(), mission]));
-  const recommendedMissions = detail.recommended_missions.map((mission) => missionsByCode.get(mission.code.trim().toUpperCase()) ?? mission);
-  const missionsToShow = placeMissions.length > 0 ? placeMissions : recommendedMissions;
+  const missionsToShow = detail.recommended_missions;
 
   return (
     <ScrollView
@@ -150,7 +142,7 @@ function PlaceDetailPager({
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
       <View onLayout={(event) => setSectionHeight(0, event)} style={[styles.detailSection, styles.introSection]}>
-        {imageUrl ? <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.introImage} /> : <View style={styles.introImagePlaceholder} />}
+        {imageUrl ? <Image cachePolicy="memory-disk" contentFit="cover" source={{ uri: imageUrl }} style={styles.introImage} /> : <View style={styles.introImagePlaceholder} />}
         <Text style={styles.introTitle}>{detail.title} 소개</Text>
         <Text style={styles.introOverview}>{detail.overview || '이 관광지에 대한 상세 설명이 아직 준비되지 않았어요.'}</Text>
 
@@ -188,7 +180,7 @@ function PlaceDetailPager({
             {missionsToShow.map((mission, index) => (
               <MissionRecommendationCard
                 isLast={index === missionsToShow.length - 1}
-                key={'mission_id' in mission ? mission.mission_id : mission.id}
+                key={mission.mission_id}
                 mission={mission}
                 onPress={onMissionPress}
               />
@@ -202,10 +194,39 @@ function PlaceDetailPager({
 
 export default function TourismPlaceDetailScreen() {
   const { topInset } = useResponsiveLayout();
-  const { contentId: contentIdParam } = useLocalSearchParams<{ contentId?: string | string[] }>();
+  const {
+    address: addressParam,
+    contentId: contentIdParam,
+    imageUrl: imageUrlParam,
+    thumbnailUrl: thumbnailUrlParam,
+    title: titleParam,
+  } = useLocalSearchParams<{
+    address?: string | string[];
+    contentId?: string | string[];
+    imageUrl?: string | string[];
+    thumbnailUrl?: string | string[];
+    title?: string | string[];
+  }>();
   const contentId = Array.isArray(contentIdParam) ? contentIdParam[0] : contentIdParam;
-  const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
-  const [availableMissions, setAvailableMissions] = useState<MissionItem[]>([]);
+  const initialTitle = Array.isArray(titleParam) ? titleParam[0] : titleParam;
+  const initialAddress = Array.isArray(addressParam) ? addressParam[0] : addressParam;
+  const initialImageUrl = Array.isArray(imageUrlParam) ? imageUrlParam[0] : imageUrlParam;
+  const initialThumbnailUrl = Array.isArray(thumbnailUrlParam) ? thumbnailUrlParam[0] : thumbnailUrlParam;
+  const initialDetail = useMemo<TourismPlaceDetail | null>(() => {
+    if (!contentId || !initialTitle) {
+      return null;
+    }
+
+    return {
+      address: initialAddress || null,
+      content_id: contentId,
+      image_url: initialImageUrl || null,
+      recommended_missions: [],
+      thumbnail_url: initialThumbnailUrl || null,
+      title: initialTitle,
+    };
+  }, [contentId, initialAddress, initialImageUrl, initialThumbnailUrl, initialTitle]);
+  const [detail, setDetail] = useState<TourismPlaceDetail | null>(initialDetail);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [sectionHeights, setSectionHeights] = useState<number[]>([]);
@@ -235,8 +256,7 @@ export default function TourismPlaceDetailScreen() {
     }
 
     const controller = new AbortController();
-    setDetail(null);
-    setAvailableMissions([]);
+    setDetail(initialDetail);
     setSectionHeights([]);
     setActiveSection(0);
     scrollYRef.current = 0;
@@ -251,31 +271,12 @@ export default function TourismPlaceDetailScreen() {
           return;
         }
 
+        setDetail(null);
         setErrorMessage(error instanceof TourismSearchApiError ? error.message : '관광지 정보를 불러오지 못했어요.');
       });
 
     return () => controller.abort();
-  }, [contentId]);
-
-  useEffect(() => {
-    if (!detail) {
-      return;
-    }
-
-    let isActive = true;
-
-    void fetchMissions({})
-      .then((missions) => {
-        if (isActive) {
-          setAvailableMissions(missions);
-        }
-      })
-      .catch(() => undefined);
-
-    return () => {
-      isActive = false;
-    };
-  }, [detail]);
+  }, [contentId, initialDetail]);
 
   const setSectionHeight = (index: number, event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height;
@@ -373,7 +374,6 @@ export default function TourismPlaceDetailScreen() {
         <PlaceDetailPager
           detail={detail}
           events={detail.nearby_events ?? []}
-          availableMissions={availableMissions}
           onMissionPress={openMissionDetail}
           onSectionChange={onSectionChange}
           scrollRef={scrollRef}
