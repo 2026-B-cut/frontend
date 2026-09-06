@@ -111,6 +111,27 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     position: 'absolute',
   },
+  /*
+  districtTouchDebugOverlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(64, 156, 183, 0.28)',
+    borderColor: '#2F8DA4',
+    borderRadius: 4,
+    borderWidth: 1,
+    bottom: -6,
+    justifyContent: 'center',
+    left: -6,
+    position: 'absolute',
+    right: -6,
+    top: -6,
+  },
+  districtTouchDebugText: {
+    color: '#15566A',
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  */
   mapLoadingIndicator: {
     left: '50%',
     position: 'absolute',

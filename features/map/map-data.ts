@@ -49,9 +49,9 @@ export const mapPieceTargets: MapPieceTarget[] = [
   { number: 16, district: '기장군', districtCode: 'GIJANG', x: 0.815, y: 0.247 },
 ];
 
-export const districtTouchPolygons: Record<number, string> = {
-  1: '0.02,0.46 0.30,0.50 0.28,0.86 0.04,0.86 0.02,0.68',
-  2: '0.27,0.66 0.44,0.69 0.44,0.83 0.26,0.88 0.20,0.76',
+const baseDistrictTouchPolygons: Record<number, string> = {
+  1: '0.02,0.36 0.30,0.50 0.28,0.86 0.04,0.86 0.02,0.68',
+  2: '0.17,0.56 0.44,0.69 0.44,0.83 0.26,0.88 0.20,0.76',
   3: '0.28,0.45 0.43,0.43 0.42,0.60 0.31,0.63 0.24,0.55',
   4: '0.36,0.23 0.51,0.18 0.51,0.38 0.43,0.44 0.33,0.36',
   5: '0.50,0.17 0.67,0.16 0.69,0.34 0.60,0.39 0.49,0.35',
@@ -68,10 +68,72 @@ export const districtTouchPolygons: Record<number, string> = {
   16: '0.68,0.02 0.98,0.02 0.96,0.37 0.80,0.42 0.67,0.31',
 };
 
+type DistrictTouchAdjustment = {
+  moveX?: number;
+  moveY?: number;
+  scale?: number;
+  scaleX?: number;
+  scaleY?: number;
+};
+
+// 이동값은 각 구역의 기존 bounds 크기를 기준으로 한 비율입니다.
+const districtTouchAdjustments: Record<number, DistrictTouchAdjustment> = {
+  2: { moveX: 0.25, moveY: -0.15, scale: 1 / 2 }, // 사하구: 기존 크기의 1.5배, 조금 아래
+  4: { moveX: 0.15, moveY: 0.15, scale: 1 / 2 }, // 북구: 좌측으로 조금, 살짝 위
+  5: { moveX: -0.1, scale: 3 / 4 }, // 금정구: 3/4, 좌측으로 조금
+  6: { moveX: -0.15, moveY: -0.15, scale: 3 / 4 }, // 동래구: 3/4, 약간 좌측 위
+  7: { moveX: -0.2, moveY: -0.1, scale: 0.8 }, // 연제구: 0.8배, 살짝 왼쪽
+  8: { moveX: 0.25, moveY: -0.25, scale: 1 / 2 }, // 부산진구: 1/2, 우측 위
+  9: { moveX: 0.15, moveY: -0.5, scale: 0.26 }, // 서구: 기존 크기의 1.3배, 살짝 좌측
+  11: { moveX: -0.35, moveY: -0.35, scale: 0.8 }, // 중구: 0.8배, 좌측으로 조금
+  12: { moveY: -0.1, scale: 1 / 2 }, // 수영구: 1/2, 조금 위
+  13: { moveY: -0.35, scale: 1 / 2 }, // 남구: 1/2, 살짝 위
+  14: { moveX: -0.05, moveY: -0.65, scale: 1 / 4 }, // 영도구: 1/4, 위로 추가 이동하고 살짝 좌측
+  15: { moveX: -0.35, moveY: -0.15, scaleX: 1 / 3, scaleY: 1 / 2 }, // 해운대구: 세로가 더 긴 1/3 크기, 좌측 위
+  16: { moveX: -0.15, scale: 3 / 4 }, // 기장군: 3/4, 살짝 좌측
+};
+
+function adjustDistrictTouchPolygon(points: string, adjustment: DistrictTouchAdjustment) {
+  const coordinates = points.split(' ').map((point) => {
+    const [x, y] = point.split(',').map(Number);
+
+    return { x, y };
+  });
+  const xValues = coordinates.map((coordinate) => coordinate.x);
+  const yValues = coordinates.map((coordinate) => coordinate.y);
+  const minX = Math.min(...xValues);
+  const maxX = Math.max(...xValues);
+  const minY = Math.min(...yValues);
+  const maxY = Math.max(...yValues);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const scaleX = adjustment.scaleX ?? adjustment.scale ?? 1;
+  const scaleY = adjustment.scaleY ?? adjustment.scale ?? 1;
+
+  return coordinates
+    .map((coordinate) => {
+      const x = centerX + (coordinate.x - centerX) * scaleX + width * (adjustment.moveX ?? 0);
+      const y = centerY + (coordinate.y - centerY) * scaleY + height * (adjustment.moveY ?? 0);
+
+      return `${x.toFixed(4)},${y.toFixed(4)}`;
+    })
+    .join(' ');
+}
+
+export const districtTouchPolygons: Record<number, string> = Object.fromEntries(
+  Object.entries(baseDistrictTouchPolygons).map(([number, points]) => {
+    const adjustment = districtTouchAdjustments[Number(number)];
+
+    return [number, adjustment ? adjustDistrictTouchPolygon(points, adjustment) : points];
+  }),
+) as Record<number, string>;
+
 export const DEFAULT_THEME_DISTRICTS: Record<MissionTheme, string[]> = {
-  MOUNTAIN: [],
-  SEA: [],
-  CITY: [],
+  MOUNTAIN: ['GANGSEO', 'SAHA', 'BUK', 'GEUMJEONG', 'BUSANJIN', 'NAM'],
+  SEA: ['GIJANG', 'HAEUNDAE', 'SUYEONG', 'YEONGDO', 'SEO', 'SAHA'],
+  CITY: ['GANGSEO', 'BUK', 'DONGNAE', 'YEONJE', 'NAM', 'JUNG'],
 };
 
 export const MAP_ASPECT_RATIO = 1;

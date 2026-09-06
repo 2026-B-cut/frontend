@@ -81,7 +81,7 @@ export default function MissionResultScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.savedText}>이 사진이 매거진에 담겨요</Text>
-            <ScalePressable onPress={goTrip} pressedScale={0.97} style={styles.tripButton}>
+            <ScalePressable onPress={goTrip} pressGuard={false} pressedScale={0.97} style={styles.tripButton}>
               <Text style={styles.tripButtonText}>{currentResultIndex < resultSessions.length - 1 ? '다음' : '목록으로 돌아가기'}</Text>
             </ScalePressable>
           </View>

@@ -58,6 +58,7 @@ const policyTitles: Record<LegalDocumentType, string> = {
   service: '서비스 이용약관',
 };
 
+/*
 const dataItems: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
@@ -74,6 +75,7 @@ const dataItems: {
     message: '동의 철회 기능은 서버 API 연결 후 사용할 수 있습니다.',
   },
 ];
+*/
 
 export default function PrivacySecurityScreen() {
   const { bottomActionInset, contentMaxWidth, horizontalPadding, topInset } = useResponsiveLayout();
@@ -158,9 +160,11 @@ export default function PrivacySecurityScreen() {
     ]);
   };
 
+  /*
   const showDataActionInfo = (label: string, message: string) => {
     Alert.alert(translateText(label), translateText(message), [{ text: translateText('확인') }]);
   };
+  */
 
   return (
     <View style={styles.container}>
@@ -203,6 +207,7 @@ export default function PrivacySecurityScreen() {
               ))}
             </View>
 
+            {/*
             <Text style={styles.sectionTitle}>내 데이터 관리</Text>
             <View style={styles.settingCard}>
               {dataItems.map((item) => (
@@ -214,6 +219,7 @@ export default function PrivacySecurityScreen() {
                 />
               ))}
             </View>
+            */}
           </View>
         </View>
       </ScrollView>
@@ -264,6 +270,7 @@ function PermissionRow({
   );
 }
 
+/*
 function ActionRow({ icon, label, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
   return (
     <ScalePressable accessibilityRole="button" onPress={onPress} pressedScale={0.98} style={styles.settingRow}>
@@ -277,6 +284,7 @@ function ActionRow({ icon, label, onPress }: { icon: keyof typeof MaterialCommun
     </ScalePressable>
   );
 }
+*/
 
 function PermissionToggle({ disabled = false, onToggle, value }: { disabled?: boolean; onToggle: () => void; value: boolean }) {
   const toggle = (

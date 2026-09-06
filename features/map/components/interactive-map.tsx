@@ -10,6 +10,10 @@ import { LocalizedText as Text } from '@/components/localized-text';
 import { districtTouchPolygons, getPolygonBounds, mapPieceTargets } from '../map-data';
 import { styles } from '../styles';
 
+// 활성 구역의 실제 터치 영역을 확인하기 위한 임시 표시입니다.
+// const SHOW_DISTRICT_TOUCH_DEBUG = true;
+const DISTRICT_TOUCH_HIT_SLOP = 6;
+
 type InteractiveMapProps = {
   activeDistrictKeys: Set<string>;
   hasThemeDistrictFilter: boolean;
@@ -61,7 +65,7 @@ export function InteractiveMap({
                       accessibilityLabel={`${target.district} ${isActive ? '미션 보기' : '비활성 구'}`}
                       accessibilityRole="button"
                       disabled={!isActive}
-                      hitSlop={6}
+                      hitSlop={DISTRICT_TOUCH_HIT_SLOP}
                       key={`district-touch-${target.number}`}
                       onPress={() => onOpenMissionDeck(target.number)}
                       onLayout={target.number === 6 ? dongnaeTarget.onLayout : undefined}
@@ -74,8 +78,15 @@ export function InteractiveMap({
                           top: bounds.minY * mapHeight,
                           width: (bounds.maxX - bounds.minX) * mapWidth,
                         },
-                      ]}
-                    />
+                      ]}>
+                      {/*
+                      {SHOW_DISTRICT_TOUCH_DEBUG && isActive ? (
+                        <View pointerEvents="none" style={styles.districtTouchDebugOverlay}>
+                          <Text style={styles.districtTouchDebugText}>{target.district}</Text>
+                        </View>
+                      ) : null}
+                      */}
+                    </Pressable>
                   );
                 })}
               </View>

@@ -33,7 +33,7 @@ type UseMapScreenOptions = {
 export function useMapScreen({ frameWidth, initialCategory, language, tutorialMissionCode }: UseMapScreenOptions) {
   const [isMissionDeckOpen, setIsMissionDeckOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryValue>(initialCategory ?? 'MOUNTAIN');
-  const [themeDistricts, setThemeDistricts] = useState(DEFAULT_THEME_DISTRICTS);
+  const themeDistricts = DEFAULT_THEME_DISTRICTS;
   const [isThemeDistrictLoading, setIsThemeDistrictLoading] = useState(false);
   const [themeDistrictError, setThemeDistrictError] = useState('');
   const [selectedMapPiece, setSelectedMapPiece] = useState<number | null>(null);
@@ -78,16 +78,10 @@ export function useMapScreen({ frameWidth, initialCategory, language, tutorialMi
         // 선택 테마에 미션이 있는 구만 요청
         const missions = await fetchMissions({ theme: missionTheme });
         prefetchMissionEmojiIcons(missions);
-        const districts = Array.from(
-          new Set(missions.flatMap((mission) => [mission.districtLabel, mission.districtCode].filter(Boolean) as string[])),
-        );
-
-        if (isActive) {
-          setThemeDistricts((prev) => ({ ...prev, [missionTheme]: districts }));
-        }
+        // 지도에서 활성화할 구역은 화면 기획 목록(DEFAULT_THEME_DISTRICTS)을 사용합니다.
+        // API 응답은 미션/이모지 갱신에만 사용하고, 응답에 포함된 구역으로 화면 상태를 덮어쓰지 않습니다.
       } catch (error) {
         if (isActive) {
-          setThemeDistricts((prev) => ({ ...prev, [missionTheme]: [] }));
           setThemeDistrictError(error instanceof Error ? error.message : '미션 구 정보를 불러오지 못했습니다.');
         }
       } finally {
