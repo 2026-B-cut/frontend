@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { TopBar } from '@/components/top-bar';
+import { useLanguage } from '@/hooks/use-language';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { fetchLegalDocuments, getCachedLegalDocument, type LegalDocument, type LegalDocumentType } from '@/lib/auth-api';
 
@@ -14,6 +15,7 @@ function isLegalDocumentType(value: string | string[] | undefined): value is Leg
 }
 
 export default function TermsDetailScreen() {
+  const { language } = useLanguage();
   const { bottomSafeInset, height, horizontalPadding, topSafeInset, width } = useResponsiveLayout();
   const params = useLocalSearchParams<{ document?: string | string[] }>();
   const documentType = isLegalDocumentType(params.document) ? (Array.isArray(params.document) ? params.document[0] : params.document) : null;
@@ -24,6 +26,15 @@ export default function TermsDetailScreen() {
 
   useEffect(() => {
     let isActive = true;
+    const cachedDocument = documentType ? getCachedLegalDocument(documentType) : null;
+
+    if (documentType) {
+      setDocument(cachedDocument);
+    } else {
+      setDocuments([]);
+    }
+    setIsLoading(documentType ? !cachedDocument : true);
+    setErrorMessage('');
 
     void fetchLegalDocuments()
       .then((response) => {
@@ -53,7 +64,7 @@ export default function TermsDetailScreen() {
     return () => {
       isActive = false;
     };
-  }, [documentType]);
+  }, [documentType, language]);
 
   const visibleDocuments = documentType ? (document ? [document] : []) : documents;
   const pageTitle = documentType ? document?.title ?? '약관' : '이용 약관';

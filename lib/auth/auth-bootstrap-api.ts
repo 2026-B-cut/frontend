@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '@/lib/api-config';
-import { getLanguageHeaders } from '@/lib/language';
+import { getCurrentLanguage, getLanguageHeaders, type AppLanguage } from '@/lib/language';
 
 import { fetchWithAuth, postJsonWithAuth, readAuthResponse } from './auth-client';
 
@@ -46,11 +46,14 @@ export type OnboardingCompleteResponse = {
   completed_at: string;
 };
 
-let legalDocumentsCache: LegalDocumentsResponse | null = null;
+const legalDocumentsCache = new Map<AppLanguage, LegalDocumentsResponse>();
 
 export async function fetchLegalDocuments(force = false) {
-  if (!force && legalDocumentsCache) {
-    return legalDocumentsCache;
+  const language = getCurrentLanguage();
+  const cachedDocuments = legalDocumentsCache.get(language);
+
+  if (!force && cachedDocuments) {
+    return cachedDocuments;
   }
 
   const res = await fetch(`${API_BASE_URL}/auth/legal-documents`, {
@@ -58,12 +61,12 @@ export async function fetchLegalDocuments(force = false) {
     method: 'GET',
   });
   const data = await readAuthResponse<LegalDocumentsResponse>(res);
-  legalDocumentsCache = data;
+  legalDocumentsCache.set(language, data);
   return data;
 }
 
 export function getCachedLegalDocument(type: LegalDocumentType) {
-  return legalDocumentsCache?.documents.find((document) => document.type === type) ?? null;
+  return legalDocumentsCache.get(getCurrentLanguage())?.documents.find((document) => document.type === type) ?? null;
 }
 
 export async function fetchAuthBootstrap() {
