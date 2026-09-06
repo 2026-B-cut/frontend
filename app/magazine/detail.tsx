@@ -24,7 +24,7 @@ function getParamValue(value: string | string[] | undefined) {
 export default function MagazineDetailScreen() {
   const params = useLocalSearchParams<{ scheduleId?: string | string[] }>();
   const scheduleId = getParamValue(params.scheduleId);
-  const { bottomSafeInset, horizontalPadding, topSafeInset } = useResponsiveLayout();
+  const { bottomSafeInset, horizontalPadding, topInset } = useResponsiveLayout();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [candidates, setCandidates] = useState<MagazineCandidate[]>([]);
   const [maxSelectable, setMaxSelectable] = useState(0);
@@ -141,7 +141,7 @@ export default function MagazineDetailScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeInset + 96, paddingTop: topSafeInset }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeInset + 96, paddingTop: topInset }}
         removeClippedSubviews={false}
         showsVerticalScrollIndicator={false}>
         <View style={{ marginBottom: 14, paddingHorizontal: horizontalPadding }}>
