@@ -87,6 +87,7 @@ const SEARCH_CACHE_TTL_MS = 60_000;
 const DETAIL_CACHE_TTL_MS = 5 * 60_000;
 const searchCache = new Map<string, { expiresAt: number; response: TourismSearchResponse }>();
 const detailCache = new Map<string, { expiresAt: number; response: TourismPlaceDetail }>();
+const pendingDetailRequests = new Map<string, Promise<TourismPlaceDetail>>();
 
 function readCache<T>(cache: Map<string, { expiresAt: number; response: T }>, key: string) {
   const entry = cache.get(key);
@@ -214,12 +215,35 @@ export async function getTourismPlaceDetail(contentId: string, signal?: AbortSig
     return cachedResponse;
   }
 
-  const response = await fetchWithAuth(`${API_BASE_URL}/tourism/places/${encodeURIComponent(contentId)}`, {
+  const pendingRequest = pendingDetailRequests.get(cacheKey);
+
+  if (pendingRequest) {
+    return pendingRequest;
+  }
+
+  const request = fetchWithAuth(`${API_BASE_URL}/tourism/places/${encodeURIComponent(contentId)}`, {
     headers: getLanguageHeaders(),
     signal,
-  });
+  })
+    .then((response) => readTourismResponse<TourismPlaceDetail>(response))
+    .then((result) => {
+      detailCache.set(cacheKey, { expiresAt: Date.now() + DETAIL_CACHE_TTL_MS, response: result });
+      return result;
+    });
 
-  const result = await readTourismResponse<TourismPlaceDetail>(response);
-  detailCache.set(cacheKey, { expiresAt: Date.now() + DETAIL_CACHE_TTL_MS, response: result });
-  return result;
+  pendingDetailRequests.set(cacheKey, request);
+
+  try {
+    return await request;
+  } finally {
+    if (pendingDetailRequests.get(cacheKey) === request) {
+      pendingDetailRequests.delete(cacheKey);
+    }
+  }
+}
+
+export async function prefetchTourismPlaceDetails(contentIds: string[]) {
+  const uniqueContentIds = [...new Set(contentIds.filter(Boolean))].slice(0, 3);
+
+  await Promise.allSettled(uniqueContentIds.map((contentId) => getTourismPlaceDetail(contentId)));
 }

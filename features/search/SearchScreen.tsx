@@ -5,6 +5,7 @@ import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import {
   getRecentTourismSearches,
   getRecommendedTourismKeywords,
+  prefetchTourismPlaceDetails,
   TourismSearchApiError,
   normalizeTourismImageUrl,
   searchTourismPlaces,
@@ -153,6 +154,7 @@ export default function SearchScreen() {
           setPage(response.page);
           setHasSearched(true);
           addRecentSearch(keyword);
+          void prefetchTourismPlaceDetails(response.items.map((item) => item.content_id));
         })
         .catch((error: unknown) => {
           if (requestIdRef.current !== requestId || isAbortError(error)) {
@@ -188,6 +190,7 @@ export default function SearchScreen() {
         setResults((current) => [...current, ...response.items]);
         setTotalCount(response.total_count);
         setPage(response.page);
+        void prefetchTourismPlaceDetails(response.items.map((item) => item.content_id));
       })
       .catch((error: unknown) => {
         setErrorMessage(error instanceof TourismSearchApiError ? error.message : '관광지 검색에 실패했어요.');
@@ -203,13 +206,12 @@ export default function SearchScreen() {
   };
 
   const openPlaceDetail = (place: TourismPlaceSearchItem) => {
+    void prefetchTourismPlaceDetails([place.content_id]);
     router.push({
       pathname: '/search-detail',
       params: {
         address: place.address ?? place.detail_address ?? '',
         contentId: place.content_id,
-        imageUrl: place.image_url ?? '',
-        thumbnailUrl: place.thumbnail_url ?? '',
         title: place.title,
       },
     } as never);

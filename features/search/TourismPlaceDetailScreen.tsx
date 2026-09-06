@@ -16,7 +16,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -197,36 +197,16 @@ export default function TourismPlaceDetailScreen() {
   const {
     address: addressParam,
     contentId: contentIdParam,
-    imageUrl: imageUrlParam,
-    thumbnailUrl: thumbnailUrlParam,
     title: titleParam,
   } = useLocalSearchParams<{
     address?: string | string[];
     contentId?: string | string[];
-    imageUrl?: string | string[];
-    thumbnailUrl?: string | string[];
     title?: string | string[];
   }>();
   const contentId = Array.isArray(contentIdParam) ? contentIdParam[0] : contentIdParam;
   const initialTitle = Array.isArray(titleParam) ? titleParam[0] : titleParam;
   const initialAddress = Array.isArray(addressParam) ? addressParam[0] : addressParam;
-  const initialImageUrl = Array.isArray(imageUrlParam) ? imageUrlParam[0] : imageUrlParam;
-  const initialThumbnailUrl = Array.isArray(thumbnailUrlParam) ? thumbnailUrlParam[0] : thumbnailUrlParam;
-  const initialDetail = useMemo<TourismPlaceDetail | null>(() => {
-    if (!contentId || !initialTitle) {
-      return null;
-    }
-
-    return {
-      address: initialAddress || null,
-      content_id: contentId,
-      image_url: initialImageUrl || null,
-      recommended_missions: [],
-      thumbnail_url: initialThumbnailUrl || null,
-      title: initialTitle,
-    };
-  }, [contentId, initialAddress, initialImageUrl, initialThumbnailUrl, initialTitle]);
-  const [detail, setDetail] = useState<TourismPlaceDetail | null>(initialDetail);
+  const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [sectionHeights, setSectionHeights] = useState<number[]>([]);
@@ -256,7 +236,7 @@ export default function TourismPlaceDetailScreen() {
     }
 
     const controller = new AbortController();
-    setDetail(initialDetail);
+    setDetail(null);
     setSectionHeights([]);
     setActiveSection(0);
     scrollYRef.current = 0;
@@ -276,7 +256,7 @@ export default function TourismPlaceDetailScreen() {
       });
 
     return () => controller.abort();
-  }, [contentId, initialDetail]);
+  }, [contentId]);
 
   const setSectionHeight = (index: number, event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height;
@@ -353,8 +333,8 @@ export default function TourismPlaceDetailScreen() {
         <View style={[styles.detailPageHeader, { paddingTop: topInset }]}>
           <TopBar onBack={() => router.back()} title="" />
           <View style={styles.detailHeading}>
-            <Text numberOfLines={1} style={styles.detailPageHeaderTitle}>{detail?.title || '관광지 상세'}</Text>
-            {detail ? <Text style={styles.detailHeaderAddress}>{getPlaceDistrict(detail.address || detail.detail_address)}</Text> : null}
+            <Text numberOfLines={1} style={styles.detailPageHeaderTitle}>{detail?.title || initialTitle || '관광지 상세'}</Text>
+            {detail || initialAddress ? <Text style={styles.detailHeaderAddress}>{getPlaceDistrict(detail?.address || detail?.detail_address || initialAddress)}</Text> : null}
           </View>
         </View>
 
