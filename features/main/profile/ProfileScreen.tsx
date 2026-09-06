@@ -19,7 +19,11 @@ export default function ProfileScreen() {
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [isDeleteAccountModalVisible, setIsDeleteAccountModalVisible] = useState(false);
   const [isSavingLanguage, setIsSavingLanguage] = useState(false);
-  const profile = useProfileScreen({ onSignedOut: () => router.replace('/login') });
+  const handleSignedOut = () => {
+    router.dismissAll();
+    router.replace('/login');
+  };
+  const profile = useProfileScreen({ onSignedOut: handleSignedOut });
 
   const handleSelectLanguage = async (nextLanguage: typeof language) => {
     setIsSavingLanguage(true);

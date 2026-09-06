@@ -11,7 +11,12 @@ import { styles } from '../profile/styles';
 
 export default function AccountManagementScreen() {
   const { contentMaxWidth, horizontalPadding, topInset } = useResponsiveLayout();
-  const profile = useProfileScreen({ onSignedOut: () => router.replace('/login') });
+  const profile = useProfileScreen({
+    onSignedOut: () => {
+      router.dismissAll();
+      router.replace('/login');
+    },
+  });
 
   return (
     <ScrollView
