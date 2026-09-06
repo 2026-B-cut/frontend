@@ -71,6 +71,16 @@ export const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingTop: 26,
   },
+  accountLoadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 260,
+  },
+  accountLoadingText: {
+    color: '#8A9194',
+    fontSize: 13,
+    marginTop: 12,
+  },
   accountSection: {
     marginBottom: 26,
     width: '100%',

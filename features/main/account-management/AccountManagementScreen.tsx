@@ -2,7 +2,6 @@
 import { router } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
-import { LocalizedText as Text } from '@/components/localized-text';
 import { TopBar } from '@/components/top-bar';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 
@@ -32,6 +31,7 @@ export default function AccountManagementScreen() {
         createdMagazineCount={profile.createdMagazineCount}
         email={profile.email}
         horizontalPadding={horizontalPadding}
+        isLoading={profile.isProfileLoading}
         nickname={profile.nickname}
         provider={profile.provider}
       />

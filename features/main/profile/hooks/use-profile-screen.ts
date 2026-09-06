@@ -22,6 +22,7 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [profileEmoji, setProfileEmoji] = useState<string | null>(null);
   const [isAccountActionInProgress, setIsAccountActionInProgress] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const handleLogout = () => {
     confirmAction('로그아웃', '현재 기기에서 로그아웃할까요?', () => {
@@ -76,15 +77,11 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
           }
         })
         .catch(() => {
+          // Keep the last known profile values when a background refresh fails.
+        })
+        .finally(() => {
           if (isActive) {
-            setNickname('사용자');
-            setProvider('email');
-            setCreatedAt('');
-            setCompletedMissionCount(0);
-            setCreatedMagazineCount(0);
-            setEmail('');
-            setProfileImageUrl(null);
-            setProfileEmoji(null);
+            setIsProfileLoading(false);
           }
         });
 
@@ -103,6 +100,7 @@ export function useProfileScreen({ onSignedOut }: UseProfileScreenOptions) {
     handleDeleteAccount,
     handleLogout,
     isAccountActionInProgress,
+    isProfileLoading,
     nickname,
     profileEmoji,
     profileImageUrl,
