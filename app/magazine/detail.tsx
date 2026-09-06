@@ -141,7 +141,7 @@ export default function MagazineDetailScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeInset + 96, paddingTop: topInset }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeInset + 96, paddingTop: topInset + 24 }}
         removeClippedSubviews={false}
         showsVerticalScrollIndicator={false}>
         <View style={{ marginBottom: 14, paddingHorizontal: horizontalPadding }}>
