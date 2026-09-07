@@ -29,9 +29,11 @@ export function TopBar({ onBack, rightContent, title, titleNumberOfLines = 1 }: 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     height: 48,
     justifyContent: 'space-between',
+    width: '100%',
   },
   backButton: {
     alignItems: 'flex-start',
@@ -45,14 +47,11 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#10161F',
+    flex: 1,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
-    left: 48,
-    position: 'absolute',
-    right: 48,
     textAlign: 'center',
-    zIndex: 1,
   },
   spacer: {
     width: 48,

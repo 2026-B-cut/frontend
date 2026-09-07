@@ -11,7 +11,7 @@ import { districtTouchPolygons, getPolygonBounds, mapPieceTargets } from '../map
 import { styles } from '../styles';
 
 // 활성 구역의 실제 터치 영역을 확인하기 위한 임시 표시입니다.
-const SHOW_DISTRICT_TOUCH_DEBUG = true;
+// const SHOW_DISTRICT_TOUCH_DEBUG = true;
 const DISTRICT_TOUCH_HIT_SLOP = 6;
 
 type InteractiveMapProps = {
@@ -79,11 +79,13 @@ export function InteractiveMap({
                           width: (bounds.maxX - bounds.minX) * mapWidth,
                         },
                       ]}>
+                      {/*
                       {SHOW_DISTRICT_TOUCH_DEBUG && isActive ? (
                         <View pointerEvents="none" style={styles.districtTouchDebugOverlay}>
                           <Text style={styles.districtTouchDebugText}>{target.district}</Text>
                         </View>
                       ) : null}
+                      */}
                     </Pressable>
                   );
                 })}
