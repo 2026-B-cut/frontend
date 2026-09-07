@@ -150,6 +150,30 @@ export function normalizeTourismImageUrl(imageUrl: string | null | undefined) {
   return imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
 }
 
+// TourAPI 관광지 사진은 HTTP 외부 URL이나 슬래시 없는 상대 경로로 내려올 수 있어
+// preview/release 앱에서도 요청할 수 있는 HTTPS URL로만 정규화합니다.
+export function normalizeTourismPlaceImageUrl(imageUrl: string | null | undefined) {
+  const value = imageUrl?.trim();
+
+  if (!value) {
+    return null;
+  }
+
+  if (value.startsWith('//')) {
+    return `https:${value}`;
+  }
+
+  if (value.startsWith('http://')) {
+    return `https://${value.slice('http://'.length)}`;
+  }
+
+  if (value.startsWith('https://')) {
+    return value;
+  }
+
+  return `${API_BASE_URL}${value.startsWith('/') ? value : `/${value}`}`;
+}
+
 export async function searchTourismPlaces(
   keyword: string,
   page = 1,

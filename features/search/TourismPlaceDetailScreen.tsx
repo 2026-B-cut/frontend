@@ -8,6 +8,7 @@ import { fetchMissions, type MissionItem } from '@/lib/mission-api';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
+  normalizeTourismPlaceImageUrl,
   TourismSearchApiError,
   type TourismMissionRecommendation,
   type TourismPlaceDetail,
@@ -31,7 +32,11 @@ import { Defs, LinearGradient, Rect, Stop, Svg } from 'react-native-svg';
 
 import { styles } from './styles';
 
-function getImageUrl(imageUrl: string | null | undefined) {
+function getPlaceImageUrl(imageUrl: string | null | undefined) {
+  return normalizeTourismPlaceImageUrl(imageUrl);
+}
+
+function getMissionImageUrl(imageUrl: string | null | undefined) {
   return normalizeTourismImageUrl(imageUrl);
 }
 
@@ -60,7 +65,7 @@ function EventInfoRow({
 }
 
 function TourismEventCard({ event }: { event: TourismPlaceSearchItem }) {
-  const imageUrl = getImageUrl(event.image_url || event.thumbnail_url);
+  const imageUrl = getPlaceImageUrl(event.image_url || event.thumbnail_url);
 
   return (
     <View style={styles.eventCard}>
@@ -91,7 +96,7 @@ function MissionRecommendationCard({
   const cardVisualGap = 8 - cardWidth * (42 / 164);
   const missionData = isRecommendation ? {
     description: mission.description,
-    iconUrl: getImageUrl(mission.emoji_url),
+    iconUrl: getMissionImageUrl(mission.emoji_url),
     title: mission.title,
     type: mission.type,
   } : {
@@ -132,7 +137,7 @@ function PlaceDetailPager({
   setSectionHeight: (index: number, event: LayoutChangeEvent) => void;
   snapOffsets: number[];
 }) {
-  const imageUrl = getImageUrl(detail.image_url || detail.thumbnail_url);
+  const imageUrl = getPlaceImageUrl(detail.image_url || detail.thumbnail_url);
   const tags = Array.from(new Set(detail.recommended_missions.flatMap((mission) => mission.match_reasons))).slice(0, 4);
   const missionsByCode = new Map(
     availableMissions

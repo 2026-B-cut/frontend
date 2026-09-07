@@ -7,7 +7,7 @@ import {
   getRecommendedTourismKeywords,
   prefetchTourismPlaceDetails,
   TourismSearchApiError,
-  normalizeTourismImageUrl,
+  normalizeTourismPlaceImageUrl,
   searchTourismPlaces,
   type TourismPlaceSearchItem,
 } from '@/lib/tourism-api';
@@ -28,7 +28,7 @@ function getLocation(place: TourismPlaceSearchItem) {
 }
 
 function getImageUrl(place: TourismPlaceSearchItem) {
-  return normalizeTourismImageUrl(place.thumbnail_url || place.image_url);
+  return normalizeTourismPlaceImageUrl(place.image_url || place.thumbnail_url);
 }
 
 function isAbortError(error: unknown) {
