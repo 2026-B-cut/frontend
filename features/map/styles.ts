@@ -36,10 +36,10 @@ export const styles = StyleSheet.create({
   categoryRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 18,
     justifyContent: 'center',
     marginBottom: 38,
-    transform: [{ translateY: -8 }],
+    transform: [{ translateY: 0 }],
     width: '100%',
   },
   categoryItem: {
