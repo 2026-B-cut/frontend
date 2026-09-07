@@ -61,6 +61,7 @@ export type TourismMissionRecommendation = {
   description: string;
   theme: 'MOUNTAIN' | 'SEA' | 'CITY' | 'DEMO';
   type: 'BASIC' | 'RARE' | 'SIDE';
+  emoji_url?: string | null;
   place_label?: string | null;
   address?: string | null;
   target_photo_url?: string | null;

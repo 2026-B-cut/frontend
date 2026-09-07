@@ -4,7 +4,7 @@ import { MissionCard } from '@/components/mission-card';
 import { TopBar } from '@/components/top-bar';
 import { MISSION_FRAME_ASPECT_RATIO } from '@/features/map/map-data';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
-import type { MissionItem } from '@/lib/mission-api';
+import { fetchMissions, type MissionItem } from '@/lib/mission-api';
 import {
   getTourismPlaceDetail,
   normalizeTourismImageUrl,
@@ -91,7 +91,7 @@ function MissionRecommendationCard({
   const cardVisualGap = 8 - cardWidth * (42 / 164);
   const missionData = isRecommendation ? {
     description: mission.description,
-    iconUrl: null,
+    iconUrl: getImageUrl(mission.emoji_url),
     title: mission.title,
     type: mission.type,
   } : {
@@ -114,6 +114,7 @@ function MissionRecommendationCard({
 }
 
 function PlaceDetailPager({
+  availableMissions,
   detail,
   events,
   onMissionPress,
@@ -122,6 +123,7 @@ function PlaceDetailPager({
   setSectionHeight,
   snapOffsets,
 }: {
+  availableMissions: MissionItem[];
   detail: TourismPlaceDetail;
   events: TourismPlaceSearchItem[];
   onMissionPress: (mission: MissionItem | TourismMissionRecommendation) => void;
@@ -132,7 +134,14 @@ function PlaceDetailPager({
 }) {
   const imageUrl = getImageUrl(detail.image_url || detail.thumbnail_url);
   const tags = Array.from(new Set(detail.recommended_missions.flatMap((mission) => mission.match_reasons))).slice(0, 4);
-  const missionsToShow = detail.recommended_missions;
+  const missionsByCode = new Map(
+    availableMissions
+      .filter((mission) => mission.code)
+      .map((mission) => [mission.code?.trim().toUpperCase(), mission]),
+  );
+  const missionsToShow = detail.recommended_missions.map(
+    (mission) => missionsByCode.get(mission.code.trim().toUpperCase()) ?? mission,
+  );
 
   return (
     <ScrollView
@@ -180,7 +189,7 @@ function PlaceDetailPager({
             {missionsToShow.map((mission, index) => (
               <MissionRecommendationCard
                 isLast={index === missionsToShow.length - 1}
-                key={mission.mission_id}
+                key={'mission_id' in mission ? mission.mission_id : mission.id}
                 mission={mission}
                 onPress={onMissionPress}
               />
@@ -207,6 +216,7 @@ export default function TourismPlaceDetailScreen() {
   const initialTitle = Array.isArray(titleParam) ? titleParam[0] : titleParam;
   const initialAddress = Array.isArray(addressParam) ? addressParam[0] : addressParam;
   const [detail, setDetail] = useState<TourismPlaceDetail | null>(null);
+  const [availableMissions, setAvailableMissions] = useState<MissionItem[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [sectionHeights, setSectionHeights] = useState<number[]>([]);
@@ -237,6 +247,7 @@ export default function TourismPlaceDetailScreen() {
 
     const controller = new AbortController();
     setDetail(null);
+    setAvailableMissions([]);
     setSectionHeights([]);
     setActiveSection(0);
     scrollYRef.current = 0;
@@ -257,6 +268,26 @@ export default function TourismPlaceDetailScreen() {
 
     return () => controller.abort();
   }, [contentId]);
+
+  useEffect(() => {
+    if (!detail) {
+      return;
+    }
+
+    let isActive = true;
+
+    void fetchMissions({})
+      .then((missions) => {
+        if (isActive) {
+          setAvailableMissions(missions);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, [detail]);
 
   const setSectionHeight = (index: number, event: LayoutChangeEvent) => {
     const height = event.nativeEvent.layout.height;
@@ -352,6 +383,7 @@ export default function TourismPlaceDetailScreen() {
 
       {detail ? (
         <PlaceDetailPager
+          availableMissions={availableMissions}
           detail={detail}
           events={detail.nearby_events ?? []}
           onMissionPress={openMissionDetail}
