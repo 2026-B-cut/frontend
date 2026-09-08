@@ -78,16 +78,18 @@ type DistrictTouchAdjustment = {
 
 // 이동값은 각 구역의 기존 bounds 크기를 기준으로 한 비율입니다.
 const districtTouchAdjustments: Record<number, DistrictTouchAdjustment> = {
+  1: { moveX: 0.05, scaleX: 0.8 }, // 강서구: 가로 길이 축소, 오른쪽으로 조금
   2: { moveX: 0.25, moveY: -0.15, scale: 1 / 2 }, // 사하구: 기존 크기의 1.5배, 조금 아래
+  3: { moveX: 0.45, moveY: -0.25, scaleX: 0.4, scaleY: 0.6 }, // 사상구: 남구와 같은 크기, 왼쪽·아래쪽으로 조금 이동
   4: { moveX: 0.15, moveY: 0.15, scale: 1 / 2 }, // 북구: 좌측으로 조금, 살짝 위
   5: { moveX: -0.1, scale: 3 / 4 }, // 금정구: 3/4, 좌측으로 조금
-  6: { moveX: -0.15, moveY: -0.15, scale: 3 / 4 }, // 동래구: 3/4, 약간 좌측 위
-  7: { moveX: -0.1, moveY: -0.2, scale: 0.8 }, // 연제구: 0.8배, 우측 위
+  6: { moveX: -0.1, moveY: -0.15, scaleX: 0.6, scaleY: 3 / 4 }, // 동래구: 가로 길이 추가 축소, 오른쪽으로 조금
+  7: { moveX: -0.1, moveY: -0.2, scaleX: 0.8, scaleY: 0.72 }, // 연제구: 세로 길이 조금 축소, 우측 위
   8: { moveX: 0.25, moveY: -0.25, scale: 1 / 2 }, // 부산진구: 1/2, 우측 위
   9: { moveX: 0.15, moveY: -0.5, scale: 0.26 }, // 서구: 기존 크기의 1.3배, 살짝 좌측
   11: { moveX: -0.35, moveY: -0.45, scale: 0.8 }, // 중구: 0.8배, 살짝 위
   12: { moveY: -0.1, scale: 1 / 2 }, // 수영구: 1/2, 조금 위
-  13: { moveY: -0.35, scaleX: 0.4, scaleY: 0.7 }, // 남구: 세로가 더 긴 사각형, 살짝 위
+  13: { moveY: -0.4, scaleX: 0.4, scaleY: 0.5 }, // 남구: 아래쪽을 줄여 세로 길이 축소
   14: { moveX: 0.05, moveY: -0.75, scale: 1 / 4 }, // 영도구: 1/4, 우측 위로 조금
   15: { moveX: -0.25, moveY: -0.15, scaleX: 1 / 3, scaleY: 1 / 2 }, // 해운대구: 세로가 더 긴 1/3 크기, 우측으로 조금
   16: { moveX: -0.15, scale: 3 / 4 }, // 기장군: 3/4, 살짝 좌측
@@ -131,7 +133,7 @@ export const districtTouchPolygons: Record<number, string> = Object.fromEntries(
 ) as Record<number, string>;
 
 export const DEFAULT_THEME_DISTRICTS: Record<MissionTheme, string[]> = {
-  MOUNTAIN: ['DONGNAE', 'SAHA', 'BUK', 'GEUMJEONG', 'BUSANJIN', 'NAM'],
+  MOUNTAIN: ['DONGNAE', 'SAHA', 'SASANG', 'BUK', 'GEUMJEONG', 'BUSANJIN', 'NAM'],
   SEA: ['GIJANG', 'HAEUNDAE', 'SUYEONG', 'YEONGDO', 'SEO', 'SAHA', 'JUNG'],
   CITY: ['GANGSEO', 'BUK', 'DONGNAE', 'YEONJE', 'NAM', 'JUNG', 'BUSANJIN', 'SAHA'],
 };
