@@ -144,7 +144,7 @@ export default function MagazineDetailScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: bottomSafeInset + 96, paddingTop: topInset }}
         removeClippedSubviews={false}
         showsVerticalScrollIndicator={false}>
-        <View style={{ marginBottom: 14, paddingHorizontal: horizontalPadding }}>
+        <View style={{ marginBottom: 0, paddingHorizontal: horizontalPadding }}>
           <TopBar onBack={() => router.back()} title="매거진" />
         </View>
 

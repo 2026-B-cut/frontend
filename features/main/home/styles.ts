@@ -37,6 +37,20 @@ export const styles = StyleSheet.create({
     paddingVertical: 32,
     width: '100%',
   },
+  homeScroll: {
+    flex: 1,
+    width: '100%',
+  },
+  homeScrollContent: {
+    paddingBottom: 32,
+  },
+  magazineList: {
+    gap: 32,
+    width: '100%',
+  },
+  magazineItem: {
+    width: '100%',
+  },
   singleMagazineFrame: {
     backgroundColor: '#EAEAEA',
     gap: 0,

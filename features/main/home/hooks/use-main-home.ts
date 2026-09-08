@@ -1,21 +1,25 @@
-// main 홈의 사용자 정보와 최신 매거진 데이터를 불러옵니다.
+// main 홈의 사용자 정보와 완료된 매거진 목록을 불러옵니다.
 import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useCallback, useState } from 'react';
 
 import { fetchMe } from '@/lib/auth-api';
 import { getAuthItem } from '@/lib/auth-storage';
-import { getMagazine, MagazineApiError } from '@/lib/magazine-api';
+import { getMagazine, MagazineApiError, type Magazine } from '@/lib/magazine-api';
 import { getLatestMissionSession, type MissionSession } from '@/lib/mission-session-api';
 import { cancelMagazineNotification, scheduleMagazineNotification } from '@/lib/mission-notification';
 import { getCachedTripSchedules, getTripSchedule, listTripSchedules, type TripSchedule } from '@/lib/trip-schedule-api';
 
 import { getResultPhotoUrl, getScheduleEndTime, isClosedSchedule } from '../main-home-data';
 
-type MagazineHomeCache = {
+export type MagazineHomeItem = {
   magazinePreviewUrl: string | null;
   photoUrls: string[];
   scheduleId: string;
+};
+
+type MagazineHomeCache = {
+  magazines: MagazineHomeItem[];
   userId: string;
 };
 
@@ -32,14 +36,14 @@ function getCachedMagazineHome() {
   return magazineHomeCache;
 }
 
-function cacheMagazineHome(scheduleId: string, photoUrls: string[], magazinePreviewUrl: string | null) {
+function cacheMagazineHome(magazines: MagazineHomeItem[]) {
   const userId = getAuthItem('user_id');
 
   if (!userId) {
     return;
   }
 
-  magazineHomeCache = { magazinePreviewUrl, photoUrls, scheduleId, userId };
+  magazineHomeCache = { magazines, userId };
 }
 
 function clearMagazineHomeCache() {
@@ -68,9 +72,7 @@ function prefetchMagazinePhotos(photoUrls: string[]) {
 export function useMainHome() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [profileEmoji, setProfileEmoji] = useState<string | null>(null);
-  const [magazinePreviewUrl, setMagazinePreviewUrl] = useState<string | null>(null);
-  const [magazinePhotoUrls, setMagazinePhotoUrls] = useState<string[]>([]);
-  const [magazineScheduleId, setMagazineScheduleId] = useState<string | null>(null);
+  const [magazines, setMagazines] = useState<MagazineHomeItem[]>([]);
   const [isMagazineLoading, setIsMagazineLoading] = useState(true);
   const [hasLoadedMagazine, setHasLoadedMagazine] = useState(false);
 
@@ -104,14 +106,12 @@ export function useMainHome() {
       const cachedMagazine = getCachedMagazineHome();
 
       if (cachedMagazine) {
-        setMagazinePreviewUrl(cachedMagazine.magazinePreviewUrl);
-        setMagazineScheduleId(cachedMagazine.scheduleId);
-        setMagazinePhotoUrls(cachedMagazine.photoUrls);
+        setMagazines(cachedMagazine.magazines);
         setIsMagazineLoading(false);
         setHasLoadedMagazine(true);
       }
 
-      const loadLatestMagazine = async () => {
+      const loadMagazines = async () => {
         if (isActive) {
           setIsMagazineLoading(true);
         }
@@ -125,15 +125,18 @@ export function useMainHome() {
             schedules = getCachedTripSchedules();
           }
 
+          const magazinesByScheduleId = new Map<string, Magazine | null>();
           await Promise.all(schedules.map(async (schedule) => {
             if (!schedule.endDate) {
               return;
             }
 
             try {
-              await getMagazine(schedule.scheduleId);
+              const magazine = await getMagazine(schedule.scheduleId);
+              magazinesByScheduleId.set(schedule.scheduleId, magazine);
               await cancelMagazineNotification(schedule.scheduleId);
             } catch (error) {
+              magazinesByScheduleId.set(schedule.scheduleId, null);
               if (error instanceof MagazineApiError && error.status === 404) {
                 await scheduleMagazineNotification({
                   endDate: schedule.endDate,
@@ -144,65 +147,62 @@ export function useMainHome() {
             }
           }));
 
-          let latestClosedSchedule = schedules
+          const closedSchedules = schedules
             .filter(isClosedSchedule)
-            .sort((left, right) => getScheduleEndTime(right) - getScheduleEndTime(left))[0];
+            .sort((left, right) => getScheduleEndTime(right) - getScheduleEndTime(left));
 
-          if (!latestClosedSchedule) {
+          if (closedSchedules.length === 0) {
             if (isActive) {
               clearMagazineHomeCache();
-              setMagazinePreviewUrl(null);
-              setMagazineScheduleId(null);
-              setMagazinePhotoUrls([]);
+              setMagazines([]);
             }
             return;
           }
 
-          // The list endpoint can omit missions after a fresh login. Hydrate the
-          // selected schedule so the cover can still be assembled from sessions.
-          if (latestClosedSchedule.missions.length === 0) {
-            try {
-              latestClosedSchedule = await getTripSchedule(latestClosedSchedule.scheduleId);
-            } catch {
-              // The saved magazine lookup below can still recover a generated cover.
-            }
-          }
+          const magazineItems = (await Promise.all(closedSchedules.map(async (schedule) => {
+            let hydratedSchedule = schedule;
 
-          // A generated magazine is persisted on the server. Use its first page
-          // as a fallback preview when session photos are not available locally.
-          let savedMagazinePreviewUrl: string | null = null;
-          try {
-            const savedMagazine = await getMagazine(latestClosedSchedule.scheduleId);
-            savedMagazinePreviewUrl = savedMagazine.imageUrls[0] ?? null;
-          } catch (error) {
-            if (!(error instanceof MagazineApiError && error.status === 404)) {
-              // Keep the existing session-photo fallback for transient errors.
+            // The list endpoint can omit missions after a fresh login. Hydrate
+            // each selected schedule so its session photos can be assembled.
+            if (hydratedSchedule.missions.length === 0) {
+              try {
+                hydratedSchedule = await getTripSchedule(hydratedSchedule.scheduleId);
+              } catch {
+                // The saved magazine lookup below can still recover a cover.
+              }
             }
-          }
 
-          const photoUrls = (await Promise.all(latestClosedSchedule.missions.map(async (mission) => {
-            try {
-              const session: MissionSession = await getLatestMissionSession(latestClosedSchedule.scheduleId, mission.scheduleMissionId);
-              return getResultPhotoUrl(session);
-            } catch {
+            const savedMagazinePreviewUrl = magazinesByScheduleId.get(schedule.scheduleId)?.imageUrls[0] ?? null;
+            const photoUrls = (await Promise.all(hydratedSchedule.missions.map(async (mission) => {
+              try {
+                const session: MissionSession = await getLatestMissionSession(hydratedSchedule.scheduleId, mission.scheduleMissionId);
+                return getResultPhotoUrl(session);
+              } catch {
+                return null;
+              }
+            }))).filter((photoUrl): photoUrl is string => Boolean(photoUrl)).slice(0, 3);
+
+            if (photoUrls.length === 0 && !savedMagazinePreviewUrl) {
               return null;
             }
-          }))).filter((photoUrl): photoUrl is string => Boolean(photoUrl)).slice(0, 3);
 
-          cacheMagazineHome(latestClosedSchedule.scheduleId, photoUrls, savedMagazinePreviewUrl);
-          prefetchMagazinePhotos(photoUrls);
+            return {
+              magazinePreviewUrl: savedMagazinePreviewUrl,
+              photoUrls,
+              scheduleId: schedule.scheduleId,
+            } satisfies MagazineHomeItem;
+          }))).filter((magazine): magazine is MagazineHomeItem => Boolean(magazine));
+
+          cacheMagazineHome(magazineItems);
+          prefetchMagazinePhotos(magazineItems.flatMap((magazine) => magazine.photoUrls));
 
           if (isActive) {
-            setMagazinePreviewUrl(savedMagazinePreviewUrl);
-            setMagazineScheduleId(latestClosedSchedule.scheduleId);
-            setMagazinePhotoUrls(photoUrls);
+            setMagazines(magazineItems);
           }
         } catch {
           if (isActive && !cachedMagazine) {
             clearMagazineHomeCache();
-            setMagazinePreviewUrl(null);
-            setMagazineScheduleId(null);
-            setMagazinePhotoUrls([]);
+            setMagazines([]);
           }
         } finally {
           if (isActive) {
@@ -212,7 +212,7 @@ export function useMainHome() {
         }
       };
 
-      void loadLatestMagazine();
+      void loadMagazines();
 
       return () => {
         isActive = false;
@@ -223,9 +223,7 @@ export function useMainHome() {
   return {
     hasLoadedMagazine,
     isMagazineLoading,
-    magazinePreviewUrl,
-    magazinePhotoUrls,
-    magazineScheduleId,
+    magazines,
     profileEmoji,
     profileImageUrl,
   };
